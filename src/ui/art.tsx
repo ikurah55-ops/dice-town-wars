@@ -1143,7 +1143,16 @@ const ART: Record<string, ReactNode> = {
   ),
 };
 
+// src/assets/cards/<カードID>.(jpg|png|webp) を置くと、そのカードは画像イラストになる（無ければSVG）
+const CARD_IMAGES: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob('../assets/cards/*.{jpg,jpeg,png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>,
+  ).map(([path, url]) => [path.replace(/^.*\/|\.[a-z]+$/g, ''), url]),
+);
+
 export function CardArt({ id }: { id: string }) {
+  const img = CARD_IMAGES[id];
+  if (img) return <img className="card-img" src={img} alt="" decoding="async" draggable={false} />;
   return (
     <svg viewBox="0 0 120 80" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" aria-hidden="true">
       {ART[id] ?? <rect width="120" height="80" fill="#444" />}
