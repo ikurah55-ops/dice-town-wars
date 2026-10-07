@@ -3,7 +3,7 @@ import { DEFAULT_AI } from '../src/core/ai';
 import { runAutoBattle } from '../src/core/auto';
 import { buildGameData, defaultData, validateLoadout } from '../src/core/data';
 import { createRng } from '../src/core/rng';
-import { applyAction, createBattle } from '../src/core/rules';
+import { applyAction, buyError, createBattle } from '../src/core/rules';
 import type { BattleState, Combatant, DiceDef, GameData, Side } from '../src/core/types';
 
 // 出目を固定したサイコロ（fixed1〜fixed6）を加えたテスト用データ
@@ -47,11 +47,12 @@ describe('データ', () => {
 });
 
 describe('初期状態', () => {
-  it('麦畑1枚・在庫4・コイン2+収入1', () => {
+  it('麦畑1枚・在庫3（施設は各4枚）・コイン2+収入1', () => {
     const s = setup('fixed1', 'fixed1');
     const p = s.players[0];
     expect(p.facilities.map((f) => f.cardId)).toEqual(['wheat']);
-    expect(p.stock.wheat).toBe(4);
+    expect(data.config.stock.facility).toBe(4);
+    expect(p.stock.wheat).toBe(3);
     expect(p.stock.thieves).toBeUndefined();
     expect(p.market).toHaveLength(8); // 基本3枚＋持ち込み5枚
     expect(data.config.marketBaseCards).not.toContain('catapult');
@@ -141,7 +142,7 @@ describe('購入', () => {
     applyAction(s, data, { type: 'buy', cardId: 'barracks' });
     applyAction(s, data, { type: 'buy', cardId: 'barracks' });
     expect(s.players[0].coins).toBe(0);
-    expect(s.players[0].stock.barracks).toBe(3);
+    expect(s.players[0].stock.barracks).toBe(2);
     expect(() => applyAction(s, data, { type: 'buy', cardId: 'wheat' })).toThrow();
   });
 });
@@ -210,8 +211,31 @@ describe('魔法', () => {
     expect(s.phase).toBe('destroy');
     applyAction(s, data, { type: 'destroy', cardId: 'wheat' });
     expect(s.players[1].facilities).toHaveLength(0);
-    expect(s.players[1].stock.wheat).toBe(5);
+    expect(s.players[1].stock.wheat).toBe(4);
     expect(s.phase).toBe('buy');
+  });
+  it('魔法は効果が切れた後、自分の購入フェーズ2回分は同じ魔法を買い直せない', () => {
+    const s = setup('fixed6', 'fixed6', ['tax', 'thieves', 'orchard', 'mill', 'archers']);
+    const turn = () => {
+      applyAction(s, data, { type: 'end_turn' });
+      applyAction(s, data, { type: 'roll' });
+      applyAction(s, data, { type: 'end_turn' });
+      applyAction(s, data, { type: 'roll' });
+    };
+    applyAction(s, data, { type: 'roll' });
+    s.players[0].coins = 4;
+    applyAction(s, data, { type: 'buy', cardId: 'tax' }); // 1回目
+    turn(); // 2回目
+    turn(); // 3回目で切れる
+    expect(s.players[0].magics).toHaveLength(0);
+    s.players[0].coins = 20;
+    expect(buyError(s, data, 0, 'tax')).toBe('再使用待ち'); // 切れた手番
+    expect(buyError(s, data, 0, 'thieves')).toBeNull(); // 別の魔法は買える
+    turn();
+    expect(buyError(s, data, 0, 'tax')).toBe('再使用待ち'); // 次の手番
+    turn();
+    s.players[0].coins = 20;
+    expect(buyError(s, data, 0, 'tax')).toBeNull(); // その次から買える
   });
   it('傭兵契約：手番終了時に残りコイン×2ダメージ', () => {
     const s = setup('fixed6', 'fixed6', ['mercenary', 'orchard', 'mill', 'archers']);

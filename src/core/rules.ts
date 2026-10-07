@@ -39,6 +39,7 @@ function createPlayer(data: GameData, c: Combatant): PlayerState {
     magics: [],
     cardLevels: c.cardLevels ?? {},
     bought: {},
+    cooldowns: {},
   };
   return p;
 }
@@ -119,9 +120,13 @@ function magicsWith(p: PlayerState, data: GameData, type: Effect['type']): { m: 
   return out;
 }
 
-function consume(p: PlayerState, m: ActiveMagic) {
+function consume(p: PlayerState, m: ActiveMagic, data: GameData) {
   m.remaining--;
-  if (m.remaining <= 0) p.magics = p.magics.filter((x) => x !== m);
+  if (m.remaining <= 0) {
+    p.magics = p.magics.filter((x) => x !== m);
+    // 効果が切れたら、しばらく同じ魔法は買い直せない
+    if (data.config.magicCooldown > 0) p.cooldowns[m.cardId] = data.config.magicCooldown;
+  }
 }
 
 function damage(state: BattleState, target: Side, amount: number) {
@@ -222,7 +227,7 @@ function beginTurn(state: BattleState, data: GameData) {
         usedHere = true;
       }
     }
-    if (usedHere) consume(me, m);
+    if (usedHere) consume(me, m, data);
   }
   if (checkWinner(state)) return;
   continueStartAfterHeal(state, data);
@@ -235,7 +240,7 @@ function continueStartAfterHeal(state: BattleState, data: GameData) {
   const ram = me.magics.find((m) => data.cards[m.cardId].effects.some((e) => e.type === 'destroy_facility'));
   if (ram) {
     const card = data.cards[ram.cardId];
-    consume(me, ram);
+    consume(me, ram, data);
     const targets = targetsUnder(state, data, side, destroyMaxCost(card));
     if (targets.length > 0) {
       state.phase = 'destroy';
@@ -255,7 +260,7 @@ function gainIncome(state: BattleState, data: GameData) {
   for (const { m, e, card } of magicsWith(me, data, 'income_bonus')) {
     income += scaleAmount((e as { amount: number }).amount, levelOf(me, card.id));
     bonusCard = card.id;
-    consume(me, m);
+    consume(me, m, data);
   }
   income = Math.max(0, income);
   me.coins += income;
@@ -321,8 +326,8 @@ function resolveRoll(state: BattleState, data: GameData) {
   for (const { e, card } of magicsWith(me, data, 'attack_multiplier')) atkMult *= scaleAmount((e as { amount: number }).amount, levelOf(me, card.id));
 
   // サイコロ系の魔法の残り回数を減らす（自分の own_roll、相手の opp_roll）
-  for (const m of [...me.magics]) if (data.cards[m.cardId].timing === 'own_roll') consume(me, m);
-  for (const m of [...them.magics]) if (data.cards[m.cardId].timing === 'opp_roll') consume(them, m);
+  for (const m of [...me.magics]) if (data.cards[m.cardId].timing === 'own_roll') consume(me, m, data);
+  for (const m of [...them.magics]) if (data.cards[m.cardId].timing === 'opp_roll') consume(them, m, data);
 
   // 1. 相手のカウンター
   for (const f of them.facilities) {
@@ -405,6 +410,7 @@ export function buyError(state: BattleState, data: GameData, side: Side, cardId:
   if ((p.stock[cardId] ?? 0) <= 0) return '在庫切れ';
   if (p.coins < card.cost) return 'コイン不足';
   if (card.category === 'magic' && findMagic(p, cardId)) return '効果中';
+  if (card.category === 'magic' && (p.cooldowns[cardId] ?? 0) > 0) return '再使用待ち';
   return null;
 }
 
@@ -449,7 +455,7 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
         log(state, side, `${card.name}：+${amount}コイン`, 'coin', { kind: 'income', side, amount, card: card.id });
       } else if (e.type === 'destroy_facility') {
         if (targetsUnder(state, data, side, e.maxCost).length > 0) {
-          consume(me, m);
+          consume(me, m, data);
           state.phase = 'destroy';
           state.pendingDestroy = { resume: 'buy' };
           return;
@@ -457,7 +463,7 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
         log(state, side, `${card.name}：壊せる施設がない`, 'magic');
       }
     }
-    consume(me, m);
+    consume(me, m, data);
   }
 }
 
@@ -486,6 +492,10 @@ function doDestroy(state: BattleState, data: GameData, cardId: string | null) {
 function endTurn(state: BattleState, data: GameData) {
   const side = state.active;
   const me = state.players[side];
+  // 再購入待ちを1手番分進める（この手番の終了時に切れた魔法は数えない）
+  for (const id of Object.keys(me.cooldowns)) {
+    if (--me.cooldowns[id] <= 0) delete me.cooldowns[id];
+  }
   if (state.builtThisTurn.length > 0) {
     const names = state.builtThisTurn.map((id) => data.cards[id].name).join('、');
     log(state, side, `${me.name}が建設：${names}`, 'buy', { kind: 'built', side, cards: [...state.builtThisTurn] });
@@ -502,7 +512,7 @@ function endTurn(state: BattleState, data: GameData) {
         log(state, side, `${card.name}：${coins}コイン払って${dmg}ダメージ`, 'damage', { kind: 'merc', side, target: opp(side), coins, amount: dmg, card: card.id });
       }
     }
-    consume(me, m);
+    consume(me, m, data);
   }
   if (checkWinner(state)) return;
 

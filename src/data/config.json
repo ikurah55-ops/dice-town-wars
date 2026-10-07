@@ -8,7 +8,7 @@
     "wheat"
   ],
   "stock": {
-    "facility": 5,
+    "facility": 4,
     "magic": 2
   },
   "marketBaseCards": [
@@ -21,6 +21,7 @@
     "damageRatio": 0.1
   },
   "magicUses": 3,
+  "magicCooldown": 2,
   "loadout": {
     "cards": 5,
     "maxMagic": 2

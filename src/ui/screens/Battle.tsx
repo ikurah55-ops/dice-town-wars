@@ -187,7 +187,7 @@ export function Battle({
     }
     const err = buyError(state, data, 0, id);
     if (err) {
-      setToast(err === 'コイン不足' ? `コインが足りません（あと${data.cards[id].cost - me.coins}）` : err === '効果中' ? '効果中は重ねて買えません' : err);
+      setToast(err === 'コイン不足' ? `コインが足りません（あと${data.cards[id].cost - me.coins}）` : err === '効果中' ? '効果中は重ねて買えません' : err === '再使用待ち' ? `この魔法はあと${me.cooldowns[id]}ターン買えません` : err);
       return;
     }
     if (data.cards[id].effects.some((e) => e.type === 'ban_face')) {
@@ -318,7 +318,7 @@ export function Battle({
                   data={data}
                   stock={me.stock[id]}
                   disabled={canBuy && !!err}
-                  badge={active ? `効果中 残${active.remaining}` : owned > 0 ? `所持${owned}` : undefined}
+                  badge={active ? `効果中 残${active.remaining}` : me.cooldowns[id] ? `再使用まで${me.cooldowns[id]}ターン` : owned > 0 ? `所持${owned}` : undefined}
                   onClick={() => tryBuy(id)}
                 />
               );

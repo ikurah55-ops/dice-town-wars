@@ -69,6 +69,7 @@ export interface GameConfig {
   marketBaseCards: string[];
   longBattle: { afterTurn: number; damageRatio: number };
   magicUses: number;
+  magicCooldown: number; // 魔法の効果が切れた後、同じ魔法を買い直せない手番数
   loadout: { cards: number; maxMagic: number };
   coinToDamage: number;
 }
@@ -132,6 +133,8 @@ export interface PlayerState {
   magics: ActiveMagic[];
   cardLevels: Record<string, number>;
   bought: Record<string, number>; // 統計用
+  /** 魔法の再購入待ち（残り手番数） */
+  cooldowns: Record<string, number>;
 }
 
 export type Phase =
