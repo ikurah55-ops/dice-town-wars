@@ -71,6 +71,7 @@ export function createBattle(
     log: [],
     quiet: !!opts.quiet,
     nextUid: 1,
+    builtThisTurn: [],
   };
   // 初期所持（在庫から差し引く）
   for (const p of state.players) {
@@ -190,15 +191,15 @@ function beginTurn(state: BattleState, data: GameData) {
   state.lastRoll = null;
   state.rerollUsed = false;
   state.damageShield = 0;
+  state.builtThisTurn = [];
 
   // ラウンド開始時の長期戦ダメージ
   if (side === 0 && state.turn > data.config.longBattle.afterTurn) {
     state.longBattleHappened = true;
+    const dmgs = state.players.map((p) => Math.floor(p.maxHp * data.config.longBattle.damageRatio)) as [number, number];
     for (const s of [0, 1] as Side[]) {
-      const p = state.players[s];
-      const dmg = Math.floor(p.maxHp * data.config.longBattle.damageRatio);
-      damage(state, s, dmg);
-      log(state, s, `長期戦ダメージ！ ${p.name}に${dmg}ダメージ`, 'damage');
+      damage(state, s, dmgs[s]);
+      log(state, s, `長期戦ダメージ！ ${state.players[s].name}に${dmgs[s]}ダメージ`, 'damage', s === 0 ? { kind: 'storm', amounts: dmgs } : undefined);
     }
     if (checkWinner(state)) return;
   }
@@ -213,11 +214,11 @@ function beginTurn(state: BattleState, data: GameData) {
       const amount = 'amount' in e ? scaleAmount(e.amount, levelOf(me, card.id)) : 0;
       if (e.type === 'heal') {
         const h = heal(me, amount);
-        log(state, side, `${card.name}：HPを${h}回復`, 'heal');
+        log(state, side, `${card.name}：HPを${h}回復`, 'heal', { kind: 'heal', side, amount: h, card: card.id });
         usedHere = true;
       } else if (e.type === 'steal_coins') {
         const n = steal(them, me, amount);
-        log(state, side, stealText(card.name, them.name, n), 'coin');
+        log(state, side, stealText(card.name, them.name, n), 'coin', { kind: 'steal', from: opp(side), to: side, amount: n, card: card.id });
         usedHere = true;
       }
     }
@@ -250,13 +251,15 @@ function gainIncome(state: BattleState, data: GameData) {
   const side = state.active;
   const me = state.players[side];
   let income = data.config.baseIncome + (data.dice[me.dice].modifiers?.incomeBonus ?? 0);
+  let bonusCard: string | null = null;
   for (const { m, e, card } of magicsWith(me, data, 'income_bonus')) {
     income += scaleAmount((e as { amount: number }).amount, levelOf(me, card.id));
+    bonusCard = card.id;
     consume(me, m);
   }
   income = Math.max(0, income);
   me.coins += income;
-  log(state, side, `収入 +${income}コイン`, 'coin');
+  log(state, side, `収入 +${income}コイン`, 'coin', bonusCard ? { kind: 'income', side, amount: income, card: bonusCard } : undefined);
   state.phase = 'roll';
 }
 
@@ -422,6 +425,7 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
 
   if (card.category !== 'magic') {
     addFacility(state, me, cardId);
+    state.builtThisTurn.push(cardId);
     return;
   }
 
@@ -433,11 +437,16 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
     // 購入した瞬間に1回目
     for (const e of card.effects) {
       const amount = 'amount' in e ? scaleAmount(e.amount, levelOf(me, card.id)) : 0;
-      if (e.type === 'heal') log(state, side, `${card.name}：HPを${heal(me, amount)}回復`, 'heal');
-      else if (e.type === 'steal_coins') log(state, side, stealText(card.name, them.name, steal(them, me, amount)), 'coin');
+      if (e.type === 'heal') {
+        const h = heal(me, amount);
+        log(state, side, `${card.name}：HPを${h}回復`, 'heal', { kind: 'heal', side, amount: h, card: card.id });
+      } else if (e.type === 'steal_coins') {
+        const n = steal(them, me, amount);
+        log(state, side, stealText(card.name, them.name, n), 'coin', { kind: 'steal', from: opp(side), to: side, amount: n, card: card.id });
+      }
       else if (e.type === 'income_bonus') {
         me.coins += amount;
-        log(state, side, `${card.name}：+${amount}コイン`, 'coin');
+        log(state, side, `${card.name}：+${amount}コイン`, 'coin', { kind: 'income', side, amount, card: card.id });
       } else if (e.type === 'destroy_facility') {
         if (targetsUnder(state, data, side, e.maxCost).length > 0) {
           consume(me, m);
@@ -464,7 +473,7 @@ function doDestroy(state: BattleState, data: GameData, cardId: string | null) {
     const victim = candidates[0];
     target.facilities = target.facilities.filter((f) => f !== victim);
     target.stock[cardId] = (target.stock[cardId] ?? 0) + 1;
-    log(state, side, `破城槌：${target.name}の${data.cards[cardId].name}を破壊！`, 'magic');
+    log(state, side, `破城槌：${target.name}の${data.cards[cardId].name}を破壊！`, 'magic', { kind: 'destroy', side, target: opp(side), card: cardId });
   }
   const resume = state.pendingDestroy?.resume ?? 'buy';
   state.pendingDestroy = null;
@@ -477,6 +486,10 @@ function doDestroy(state: BattleState, data: GameData, cardId: string | null) {
 function endTurn(state: BattleState, data: GameData) {
   const side = state.active;
   const me = state.players[side];
+  if (state.builtThisTurn.length > 0) {
+    const names = state.builtThisTurn.map((id) => data.cards[id].name).join('、');
+    log(state, side, `${me.name}が建設：${names}`, 'buy', { kind: 'built', side, cards: [...state.builtThisTurn] });
+  }
   for (const m of [...me.magics]) {
     const card = data.cards[m.cardId];
     if (card.timing !== 'turn_end') continue;
@@ -486,7 +499,7 @@ function endTurn(state: BattleState, data: GameData) {
         const dmg = coins * scaleAmount(e.amount, levelOf(me, card.id));
         me.coins = 0;
         damage(state, opp(side), dmg);
-        log(state, side, `${card.name}：${coins}コイン払って${dmg}ダメージ`, 'damage');
+        log(state, side, `${card.name}：${coins}コイン払って${dmg}ダメージ`, 'damage', { kind: 'merc', side, target: opp(side), coins, amount: dmg, card: card.id });
       }
     }
     consume(me, m);

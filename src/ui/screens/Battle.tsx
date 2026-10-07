@@ -11,6 +11,7 @@ import { HowToPlay } from './Title';
 
 const ROLL_MS = 650;
 const SHOW_FACE_MS = 1000; // 出目を大きく見せる時間
+const BUILT_MS = 1300; // 建てた施設を見せる時間
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 type View = { hp: [number, number]; coins: [number, number] };
@@ -41,6 +42,7 @@ export function Battle({
   const [rolling, setRolling] = useState(false);
   const [busy, setBusy] = useState(false); // 出目の演出中は操作を止める
   const [bigDie, setBigDie] = useState<{ face: number; enemy: boolean } | null>(null);
+  const [built, setBuilt] = useState<{ side: Side; cards: [string, number][] } | null>(null);
   const [preview, setPreview] = useState<number | null>(null); // 演出中に盤面で光らせる出目
   const [view, setView] = useState<View | null>(null); // 演出中のHP・コイン表示
   const stageRef = useRef<HTMLDivElement>(null);
@@ -64,22 +66,14 @@ export function Battle({
   const [toast, setToast] = useState<string | null>(null);
   const ai: AiProfile = useMemo(() => ({ weights: boss.weights, randomness: boss.randomness }), [boss]);
 
-  const dispatch = (a: Action) => {
-    setState((prev) => {
-      const s = structuredClone(prev);
-      try {
-        applyAction(s, data, a);
-      } catch (e) {
-        console.warn(e);
-        return prev;
-      }
-      return s;
-    });
-  };
+  const busyRef = useRef(false);
 
-  /** 振る → 出目を1秒見せる → 効果の演出 → 状態を確定 */
-  const animateRoll = async (a: Action) => {
-    const showRoll = a.type !== 'keep'; // 女神で「この目で決定」したときは振り演出なし
+  /**
+   * 行動を実行する。演出用イベントがあれば再生してから状態を確定する。
+   * サイコロ：振る → 出目を1秒見せる → 効果の演出。手番終了：建設表示 → 相手の手番開始時の魔法。
+   */
+  const perform = async (a: Action) => {
+    if (busyRef.current) return;
     const prev = stateRef.current;
     const next = structuredClone(prev);
     try {
@@ -88,31 +82,52 @@ export function Battle({
       console.warn(e);
       return;
     }
-    setBusy(true);
-    const face = next.lastRoll!;
-    if (showRoll) {
-      setRolling(true);
-      const iv = setInterval(() => setRollFace(1 + Math.floor(Math.random() * 6)), 70);
-      await sleep(ROLL_MS);
-      clearInterval(iv);
-      if (!alive.current) return;
-      setRolling(false);
-      setPreview(face);
-      setBigDie({ face, enemy: prev.active === 1 });
-      await sleep(SHOW_FACE_MS);
-      if (!alive.current) return;
-      setBigDie(null);
-    } else setPreview(face);
-
+    const isRoll = a.type === 'roll' || a.type === 'reroll' || a.type === 'keep';
     const fxs = groupFx(next.log.slice(prev.log.length).flatMap((l) => (l.fx ? [l.fx] : [])));
+    if (!isRoll && fxs.length === 0) {
+      stateRef.current = next;
+      setState(next);
+      return;
+    }
+    busyRef.current = true;
+    setBusy(true);
+    const reopenMarket = a.type === 'buy';
+    setMarketOpen(false);
+
+    if (isRoll) {
+      const face = next.lastRoll!;
+      if (a.type !== 'keep') {
+        // 女神で「この目で決定」したときは振り演出なし
+        setRolling(true);
+        const iv = setInterval(() => setRollFace(1 + Math.floor(Math.random() * 6)), 70);
+        await sleep(ROLL_MS);
+        clearInterval(iv);
+        if (!alive.current) return;
+        setRolling(false);
+        setPreview(face);
+        setBigDie({ face, enemy: prev.active === 1 });
+        await sleep(SHOW_FACE_MS);
+        if (!alive.current) return;
+        setBigDie(null);
+      } else setPreview(face);
+    }
+
     if (fxs.length > 0 && fxRef.current && stageRef.current) {
       const v: View = {
         hp: [prev.players[0].hp, prev.players[1].hp],
         coins: [prev.players[0].coins, prev.players[1].coins],
       };
       setView({ ...v });
-      const ctx = { root: fxRef.current, stage: stageRef.current, data, face };
+      const ctx = { root: fxRef.current, stage: stageRef.current, data, face: next.lastRoll ?? 0 };
       for (const fx of fxs) {
+        if (fx.kind === 'built') {
+          setBuilt({ side: fx.side, cards: countCards(fx.cards) });
+          await sleep(BUILT_MS);
+          if (!alive.current) return;
+          setBuilt(null);
+          await sleep(120);
+          continue;
+        }
         await playFx(ctx, fx, () => {
           applyFxToView(v, fx);
           setView({ hp: [...v.hp], coins: [...v.coins] });
@@ -120,9 +135,12 @@ export function Battle({
         if (!alive.current) return;
       }
     }
+    stateRef.current = next;
     setState(next);
     setView(null);
     setPreview(null);
+    if (reopenMarket && next.active === 0 && next.phase === 'buy') setMarketOpen(true);
+    busyRef.current = false;
     setBusy(false);
   };
 
@@ -131,10 +149,7 @@ export function Battle({
     if (state.phase === 'over' || state.active !== 1 || busy) return;
     const a = chooseAction(state, data, ai, Math.random);
     const delay = a.type === 'roll' || a.type === 'reroll' ? CPU_DELAY.roll : a.type === 'buy' ? CPU_DELAY.buy : CPU_DELAY.other;
-    const t = setTimeout(() => {
-      if (a.type === 'roll' || a.type === 'reroll' || a.type === 'keep') void animateRoll(a);
-      else dispatch(a);
-    }, delay);
+    const t = setTimeout(() => void perform(a), delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, busy]);
@@ -179,7 +194,7 @@ export function Battle({
       setFaceTarget(id);
       return;
     }
-    dispatch({ type: 'buy', cardId: id });
+    void perform({ type: 'buy', cardId: id });
   };
 
   return (
@@ -224,22 +239,22 @@ export function Battle({
             デッキを見る
           </button>
           {myTurn && state.phase === 'roll' && (
-            <button className="btn btn-primary btn-side" disabled={busy} onClick={() => void animateRoll({ type: 'roll' })}>
+            <button className="btn btn-primary btn-side" disabled={busy} onClick={() => void perform({ type: 'roll' })}>
               サイコロを振る
             </button>
           )}
           {myTurn && state.phase === 'reroll' && !busy && (
             <>
-              <button className="btn btn-magic btn-side" onClick={() => void animateRoll({ type: 'reroll' })}>
+              <button className="btn btn-magic btn-side" onClick={() => void perform({ type: 'reroll' })}>
                 振り直す
               </button>
-              <button className="btn btn-primary btn-side" onClick={() => void animateRoll({ type: 'keep' })}>
+              <button className="btn btn-primary btn-side" onClick={() => void perform({ type: 'keep' })}>
                 {state.lastRoll}で決定
               </button>
             </>
           )}
           {canBuy && (
-            <button className="btn btn-primary btn-side" onClick={() => dispatch({ type: 'end_turn' })}>
+            <button className="btn btn-primary btn-side" disabled={busy} onClick={() => void perform({ type: 'end_turn' })}>
               手番終了
             </button>
           )}
@@ -262,6 +277,19 @@ export function Battle({
         </div>
       )}
 
+      {built && (
+        <div className={`built ${built.side === 1 ? 'built-enemy' : 'built-me'}`} aria-live="polite">
+          <div className="built-title">{state.players[built.side].name}が建設！</div>
+          <div className="built-cards">
+            {built.cards.map(([id, n], i) => (
+              <div key={id} className="built-card" style={{ animationDelay: `${i * 90}ms` }}>
+                <CardView card={data.cards[id]} data={data} badge={n > 1 ? `×${n}` : undefined} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {marketOpen && (
         <div className="market">
           <div className="market-head">
@@ -271,7 +299,7 @@ export function Battle({
               盤面を見る
             </button>
             {canBuy && (
-              <button className="btn btn-small btn-primary" onClick={() => dispatch({ type: 'end_turn' })}>
+              <button className="btn btn-small btn-primary" disabled={busy} onClick={() => void perform({ type: 'end_turn' })}>
                 手番終了
               </button>
             )}
@@ -307,7 +335,7 @@ export function Battle({
                 card={data.cards[id]}
                 data={data}
                 badge={`×${cpu.facilities.filter((f) => f.cardId === id).length}`}
-                onClick={() => dispatch({ type: 'destroy', cardId: id })}
+                onClick={() => void perform({ type: 'destroy', cardId: id })}
               />
             ))}
           </div>
@@ -321,7 +349,7 @@ export function Battle({
           cardId={faceTarget}
           onCancel={() => setFaceTarget(null)}
           onPick={(face) => {
-            dispatch({ type: 'buy', cardId: faceTarget, face });
+            void perform({ type: 'buy', cardId: faceTarget, face });
             setFaceTarget(null);
           }}
         />
@@ -354,6 +382,13 @@ export function Battle({
   );
 }
 
+/** ['wheat','wheat','barracks'] → [['wheat',2],['barracks',1]] */
+function countCards(ids: string[]): [string, number][] {
+  const m = new Map<string, number>();
+  for (const id of ids) m.set(id, (m.get(id) ?? 0) + 1);
+  return [...m];
+}
+
 /** 演出のタイミングで表示用のHP・コインを進める */
 function applyFxToView(v: View, fx: Fx) {
   switch (fx.kind) {
@@ -370,6 +405,17 @@ function applyFxToView(v: View, fx: Fx) {
     case 'steal':
       v.coins[fx.from] -= fx.amount;
       v.coins[fx.to] += fx.amount;
+      break;
+    case 'income':
+      v.coins[fx.side] += fx.amount;
+      break;
+    case 'merc':
+      v.coins[fx.side] -= fx.coins;
+      v.hp[fx.target] -= fx.amount;
+      break;
+    case 'storm':
+      v.hp[0] -= fx.amounts[0];
+      v.hp[1] -= fx.amounts[1];
       break;
   }
 }
@@ -410,7 +456,7 @@ function StatusLine({ p, side, data, onMagic }: { p: PlayerState; side: Side; da
       <span className="magic-slots">
         {p.magics.length === 0 && <span className="magic-slot is-empty" aria-label="発動中の魔法なし" />}
         {p.magics.map((m) => (
-          <button key={m.cardId} className="magic-slot" onClick={() => onMagic(m.cardId)}>
+          <button key={m.cardId} className="magic-slot" data-magic={`${side}-${m.cardId}`} onClick={() => onMagic(m.cardId)}>
             {data.cards[m.cardId].name}
             {m.face !== undefined && <b>［{m.face}］</b>}
             <span className="magic-left">{m.remaining}</span>

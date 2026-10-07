@@ -164,6 +164,8 @@ export interface BattleState {
   /** true のときログを記録しない（シミュレーション高速化） */
   quiet: boolean;
   nextUid: number;
+  /** この手番に建てた施設（手番終了時の表示用） */
+  builtThisTurn: string[];
 }
 
 /** 演出用の構造化イベント（UIがエフェクトを出すのに使う。ロジックには影響しない） */
@@ -174,7 +176,12 @@ export type Fx =
   | { kind: 'shield'; side: Side; amount: number; card: string } // 見張り塔など
   | { kind: 'heal'; side: Side; amount: number; card: string }
   | { kind: 'steal'; from: Side; to: Side; amount: number; card: string }
-  | { kind: 'zap'; target: Side; amount: number; card: string }; // カウンターのダメージ
+  | { kind: 'zap'; target: Side; amount: number; card: string } // カウンターのダメージ
+  | { kind: 'income'; side: Side; amount: number; card: string } // 徴税令つきの収入（合計）
+  | { kind: 'destroy'; side: Side; target: Side; card: string } // 破城槌で壊した施設
+  | { kind: 'merc'; side: Side; target: Side; coins: number; amount: number; card: string } // 傭兵契約
+  | { kind: 'storm'; amounts: [number, number] } // 長期戦ダメージ
+  | { kind: 'built'; side: Side; cards: string[] }; // その手番に建てた施設
 
 export interface LogEntry {
   turn: number;

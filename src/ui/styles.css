@@ -1399,3 +1399,217 @@ button {
     animation: none;
   }
 }
+
+/* ---------- 魔法・建設の演出 ---------- */
+.fx-spell {
+  position: absolute;
+  white-space: nowrap;
+  padding: 4px 16px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 15px;
+  color: #fff;
+  background: linear-gradient(90deg, rgba(122, 75, 176, 0), rgba(122, 75, 176, 0.95) 20%, rgba(122, 75, 176, 0.95) 80%, rgba(122, 75, 176, 0));
+  text-shadow: 0 0 8px #d6a8ff;
+  letter-spacing: 0.08em;
+}
+.fx-mag {
+  color: #e0b8ff;
+}
+.fx-beam {
+  position: absolute;
+  top: 0;
+  width: 90px;
+  transform-origin: top center;
+  background: linear-gradient(90deg, rgba(255, 246, 200, 0), rgba(255, 252, 230, 0.85) 35%, #ffffff 50%, rgba(255, 252, 230, 0.85) 65%, rgba(255, 246, 200, 0));
+  filter: blur(1px);
+  box-shadow: 0 0 40px rgba(255, 240, 180, 0.7);
+}
+.fx-burst-holy {
+  background: radial-gradient(circle, #ffffff 0%, #fff6c4 25%, rgba(154, 255, 176, 0.6) 50%, rgba(154, 255, 176, 0) 70%);
+}
+.fx-burst-storm {
+  background: radial-gradient(circle, #ffd0c0 0%, rgba(180, 20, 40, 0.8) 40%, rgba(60, 0, 20, 0) 70%);
+}
+.fx-sparkle-water {
+  background: #bff6ff;
+  filter: drop-shadow(0 0 4px #5ac8ff);
+}
+.hp-bar.fx-healed {
+  animation: healed 0.6s ease-out;
+}
+@keyframes healed {
+  30% {
+    box-shadow: 0 0 0 3px #9affb0, 0 0 20px #9affb0;
+  }
+}
+.fx-smoke {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(70, 40, 100, 0.9), rgba(30, 20, 50, 0.6) 55%, rgba(30, 20, 50, 0) 72%);
+}
+.fx-dash {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 70px;
+  height: 26px;
+  margin: -13px 0 0 -35px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #0a0610 30%, rgba(60, 30, 90, 0.7) 60%, rgba(60, 30, 90, 0) 75%);
+  box-shadow: 0 0 12px rgba(200, 140, 255, 0.6);
+}
+.fx-scroll {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 18px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #fff8e4, #e6cc98);
+  border-top: 5px solid #8a5a2a;
+  border-bottom: 5px solid #8a5a2a;
+  color: #3a2205;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 210, 80, 0.5);
+}
+.fx-scroll span {
+  font-size: 13px;
+  font-weight: 800;
+}
+.fx-scroll b {
+  font-size: 22px;
+  color: #a86a12;
+}
+.fx-ram {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 120px;
+  height: 22px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #c48a52, #6b3e1e);
+  border-right: 16px solid #3a3d44;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+.fx-debris {
+  position: absolute;
+  width: 9px;
+  height: 7px;
+  background: #8a6a44;
+  border: 1px solid #3a2a1a;
+}
+.bchip.fx-crumble {
+  animation: crumble 0.8s ease-in forwards;
+}
+@keyframes crumble {
+  0% {
+    transform: none;
+    filter: none;
+  }
+  20% {
+    transform: translateX(-3px) rotate(-3deg);
+  }
+  40% {
+    transform: translateX(3px) rotate(3deg);
+    filter: grayscale(1) brightness(0.6);
+  }
+  100% {
+    transform: translateY(8px) scale(0.6) rotate(8deg);
+    opacity: 0;
+    filter: grayscale(1) brightness(0.4);
+  }
+}
+.fx-sword {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 22px;
+  margin: -11px 0 0 -3px;
+  border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(180deg, #ffffff, #9aa6b4 70%, #c9a24a 72%, #6b3e1e);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  transform: rotate(180deg);
+}
+.fx-storm {
+  color: #ffd0c0;
+  -webkit-text-stroke: 1.5px #7a0a14;
+  letter-spacing: 0.1em;
+}
+.fx-flash-storm {
+  background: radial-gradient(circle, rgba(60, 0, 20, 0.1), rgba(90, 0, 20, 0.85));
+}
+.bchip,
+.magic-slot {
+  --pulse: transparent;
+}
+.magic-slot.fx-pulse-mag {
+  animation: chipPulse 0.6s ease-out;
+  --pulse: rgba(214, 168, 255, 0.95);
+}
+
+/* 建設の表示 */
+.built {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0 12px;
+  pointer-events: none;
+  animation: builtIn 0.25s ease-out;
+}
+.built-me {
+  bottom: 50px;
+  background: linear-gradient(0deg, rgba(20, 12, 6, 0), rgba(20, 12, 6, 0.85) 20%, rgba(20, 12, 6, 0.85) 80%, rgba(20, 12, 6, 0));
+}
+.built-enemy {
+  top: 46px;
+  background: linear-gradient(0deg, rgba(40, 8, 6, 0), rgba(40, 8, 6, 0.85) 20%, rgba(40, 8, 6, 0.85) 80%, rgba(40, 8, 6, 0));
+}
+.built-title {
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: #ffd877;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+.built-enemy .built-title {
+  color: #ffb4a8;
+}
+.built-cards {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.built-card {
+  width: 118px;
+  animation: buildPop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
+}
+.built-card .card {
+  box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(255, 207, 74, 0.7);
+}
+.built-enemy .built-card .card {
+  box-shadow: 0 0 0 3px var(--enemy), 0 0 22px rgba(255, 90, 60, 0.7);
+}
+.built-card .card-text {
+  display: none;
+}
+@keyframes buildPop {
+  from {
+    transform: translateY(30px) scale(0.5);
+    opacity: 0;
+  }
+}
+@keyframes builtIn {
+  from {
+    opacity: 0;
+  }
+}
