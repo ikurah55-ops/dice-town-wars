@@ -4,11 +4,26 @@
   "bossHpGrowthPer3Stages": 15,
   "startCoins": 2,
   "baseIncome": 1,
-  "startingCards": ["wheat"],
-  "stock": { "facility": 5, "magic": 2 },
-  "marketBaseCards": ["wheat", "trade", "barracks", "catapult"],
-  "longBattle": { "afterTurn": 15, "damageRatio": 0.1 },
+  "startingCards": [
+    "wheat"
+  ],
+  "stock": {
+    "facility": 5,
+    "magic": 2
+  },
+  "marketBaseCards": [
+    "wheat",
+    "trade",
+    "barracks"
+  ],
+  "longBattle": {
+    "afterTurn": 15,
+    "damageRatio": 0.1
+  },
   "magicUses": 3,
-  "loadout": { "cards": 4, "maxMagic": 2 },
+  "loadout": {
+    "cards": 5,
+    "maxMagic": 2
+  },
   "coinToDamage": 3
 }

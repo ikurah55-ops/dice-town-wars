@@ -24,7 +24,7 @@ function combatant(name: string, dice: string, loadout: string[]): Combatant {
   return { name, maxHp: 180, dice, loadout };
 }
 
-function setup(p0Dice: string, p1Dice: string, l0: string[] = ['orchard', 'mill', 'spoils', 'archers'], l1: string[] = ['watchtower', 'infirmary', 'toll', 'counter_battery']): BattleState {
+function setup(p0Dice: string, p1Dice: string, l0: string[] = ['orchard', 'mill', 'spoils', 'archers', 'catapult'], l1: string[] = ['watchtower', 'infirmary', 'toll', 'counter_battery', 'cannon']): BattleState {
   return createBattle(data, combatant('P', p0Dice, l0), combatant('C', p1Dice, l1), { seed: 42 });
 }
 
@@ -39,8 +39,9 @@ describe('データ', () => {
     expect(defaultData.bosses.length).toBeGreaterThan(0);
   });
   it('持ち込みの検証', () => {
-    expect(validateLoadout(data, ['orchard', 'mill', 'spoils', 'archers'])).toBeNull();
-    expect(validateLoadout(data, ['seal', 'thieves', 'tax', 'archers'])).toMatch('魔法');
+    expect(validateLoadout(data, ['orchard', 'mill', 'spoils', 'archers', 'catapult'])).toBeNull();
+    expect(validateLoadout(data, ['orchard', 'mill', 'spoils', 'archers'])).toMatch('5枚');
+    expect(validateLoadout(data, ['seal', 'thieves', 'tax', 'archers', 'mill'])).toMatch('魔法');
     expect(validateLoadout(data, ['orchard'])).not.toBeNull();
   });
 });
@@ -52,7 +53,9 @@ describe('初期状態', () => {
     expect(p.facilities.map((f) => f.cardId)).toEqual(['wheat']);
     expect(p.stock.wheat).toBe(4);
     expect(p.stock.thieves).toBeUndefined();
-    expect(p.market).toHaveLength(8);
+    expect(p.market).toHaveLength(8); // 基本3枚＋持ち込み5枚
+    expect(data.config.marketBaseCards).not.toContain('catapult');
+    expect(data.cards.catapult.base).toBeFalsy();
     expect(p.coins).toBe(3); // 初期2 + 基本収入1
     expect(s.phase).toBe('roll');
   });

@@ -12,7 +12,7 @@
 
   { "id": "barracks", "name": "兵舎", "category": "attack", "cost": 5, "faces": [4, 5], "base": true,
     "effects": [{ "type": "deal_damage", "amount": 15 }] },
-  { "id": "catapult", "name": "投石機", "category": "attack", "cost": 5, "faces": [6], "base": true,
+  { "id": "catapult", "name": "投石機", "category": "attack", "cost": 5, "faces": [6],
     "effects": [{ "type": "deal_damage", "amount": 30 }] },
   { "id": "archers", "name": "弓兵隊", "category": "attack", "cost": 6, "faces": [1, 3, 5],
     "effects": [{ "type": "deal_damage", "amount": 12 }] },

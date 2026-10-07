@@ -6,8 +6,19 @@
     "description": "畑と兵舎をバランスよく育てる、腕試しの相手。",
     "stage": 1,
     "dice": "normal",
-    "loadout": ["orchard", "archers", "watchtower", "thieves"],
-    "weights": { "economy": 1.0, "attack": 1.0, "counter": 0.9, "magic": 0.9 },
+    "loadout": [
+      "orchard",
+      "archers",
+      "catapult",
+      "watchtower",
+      "thieves"
+    ],
+    "weights": {
+      "economy": 1,
+      "attack": 1,
+      "counter": 0.9,
+      "magic": 0.9
+    },
     "randomness": 0.25
   }
 ]
