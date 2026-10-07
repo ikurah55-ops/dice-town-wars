@@ -305,7 +305,8 @@ export function Battle({
             )}
           </div>
           <div className="market-grid">
-            {me.market.map((id) => {
+            {/* 左上からコストの低い順（同コストは市場の並び順のまま） */}
+            {[...me.market].sort((x, y) => data.cards[x].cost - data.cards[y].cost).map((id) => {
               const card = data.cards[id];
               const err = buyError(state, data, 0, id);
               const active = me.magics.find((m) => m.cardId === id);
