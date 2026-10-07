@@ -25,6 +25,10 @@
 
   { "id": "watchtower", "name": "見張り塔", "category": "counter", "cost": 2, "faces": [4, 5],
     "effects": [{ "type": "reduce_damage", "amount": 5 }] },
+  { "id": "palisade", "name": "木の柵", "category": "counter", "cost": 3, "faces": [1, 2, 3, 4],
+    "effects": [{ "type": "reduce_damage", "amount": 3 }] },
+  { "id": "castle_wall", "name": "城壁", "category": "counter", "cost": 7, "faces": [4, 5, 6],
+    "effects": [{ "type": "reduce_damage", "amount": 12 }] },
   { "id": "infirmary", "name": "救護所", "category": "counter", "cost": 3, "faces": [3],
     "effects": [{ "type": "heal", "amount": 10 }] },
   { "id": "toll", "name": "関所", "category": "counter", "cost": 4, "faces": [1, 2],

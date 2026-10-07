@@ -619,6 +619,51 @@ const ART: Record<string, ReactNode> = {
     </>
   ),
 
+  palisade: (
+    <>
+      <Bg fill="dt-sky-teal" />
+      <path d="M0 52 Q40 44 80 50 T120 48 V80 H0Z" fill="#1e4a3a" />
+      <rect y="64" width="120" height="16" fill="url(#dt-earth)" />
+      {Array.from({ length: 13 }, (_, i) => {
+        const x = i * 9.5 - 2;
+        const h = 30 + ((i * 7) % 6);
+        return <path key={i} d={`M${x} 74 V${74 - h} L${x + 4} ${70 - h} L${x + 8} ${74 - h} V74Z`} fill="url(#dt-wood)" stroke="#2a1206" strokeWidth="0.5" />;
+      })}
+      <path d="M0 50 L120 46 M0 62 L120 58" stroke="#5a3014" strokeWidth="2.2" />
+      <path d="M0 50 L120 46" stroke="#c48a52" strokeWidth="0.6" opacity="0.6" />
+      <Torch x={60} y={30} />
+      <Vig />
+    </>
+  ),
+
+  castle_wall: (
+    <>
+      <Bg fill="dt-sky-dusk" />
+      <Glow x={90} y={36} r={44} c="warm" />
+      <rect x="0" y="34" width="120" height="46" fill="url(#dt-stone)" />
+      {Array.from({ length: 8 }, (_, i) => (
+        <rect key={i} x={i * 16} y="24" width="10" height="11" fill="url(#dt-stone)" />
+      ))}
+      {[42, 52, 62, 72].map((y, i) => (
+        <path key={y} d={`M0 ${y} H120 ${Array.from({ length: 8 }, (_, k) => `M${k * 16 + (i % 2 ? 8 : 0)} ${y} V${y + 10}`).join(' ')}`} stroke="#5a5040" strokeWidth="0.6" />
+      ))}
+      <path d="M48 80 V56 Q60 44 72 56 V80Z" fill="#1a1208" />
+      <g stroke="#3a3a40" strokeWidth="1.2">
+        {[52, 57, 62, 67].map((x) => (
+          <line key={x} x1={x} y1="52" x2={x} y2="80" />
+        ))}
+        {[60, 68, 76].map((y) => (
+          <line key={y} x1="49" y1={y} x2="71" y2={y} />
+        ))}
+      </g>
+      <line x1="20" y1="24" x2="20" y2="4" stroke="#1a0a06" strokeWidth="1.2" />
+      <path d="M20 5 Q28 3 34 6 Q30 9 34 13 Q27 11 20 13Z" fill="url(#dt-blue-cloth)" />
+      <line x1="100" y1="24" x2="100" y2="4" stroke="#1a0a06" strokeWidth="1.2" />
+      <path d="M100 5 Q108 3 114 6 Q110 9 114 13 Q107 11 100 13Z" fill="url(#dt-blue-cloth)" />
+      <Vig />
+    </>
+  ),
+
   cannon: (
     <>
       <rect width="120" height="80" fill="#1a1416" />

@@ -46,6 +46,8 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | ファイル名 | カード | 題材 |
 |---|---|---|
 | `watchtower.jpg` | 見張り塔 | A tall stone watchtower at night with a blazing signal fire on top, beams of light sweeping the dark forest, a sentry with a spear, starry sky and full moon. |
+| `palisade.jpg` | 木の柵 | A long wooden palisade of sharpened logs around a frontier village at dusk, torches on the posts, militia guards behind it, arrows stuck in the wood, misty hills. |
+| `castle_wall.jpg` | 城壁 | A massive stone castle wall with battlements and a closed iron portcullis, blue banners, defenders on the ramparts, sunset sky, an army camp in the distance. |
 | `infirmary.jpg` | 救護所 | A white canvas field hospital tent with a red cross banner at dawn, warm lamplight glowing from inside, a healer with bandages and herbs, soft green healing light. |
 | `toll.jpg` | 関所 | A fortified stone gatehouse with a raised portcullis, a red and white striped barrier across the road, guards collecting coins at a small toll booth, torches, evening sky. |
 | `counter_battery.jpg` | 反撃砲台 | A castle wall cannon firing back at an incoming fireball, a glowing blue magical shield deflecting the attack, night sky, sparks and smoke. |

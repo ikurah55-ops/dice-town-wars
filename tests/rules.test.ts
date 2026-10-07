@@ -34,7 +34,7 @@ function give(s: BattleState, side: Side, ...ids: string[]) {
 
 describe('データ', () => {
   it('全データが読み込める', () => {
-    expect(Object.keys(defaultData.cards)).toHaveLength(25);
+    expect(Object.keys(defaultData.cards)).toHaveLength(27);
     expect(defaultData.config.playerMaxHp).toBe(180);
     expect(defaultData.bosses.length).toBeGreaterThan(0);
   });
@@ -108,6 +108,18 @@ describe('カウンター', () => {
     give(s2, 1, 'watchtower');
     applyAction(s2, data, { type: 'roll' });
     expect(s2.players[1].hp).toBe(180 - 25);
+  });
+  it('城壁は投石機30を18に、木の柵と見張り塔は重ねがけできる', () => {
+    const s1 = setup('fixed6', 'fixed1');
+    give(s1, 0, 'catapult');
+    give(s1, 1, 'castle_wall');
+    applyAction(s1, data, { type: 'roll' });
+    expect(s1.players[1].hp).toBe(180 - 18);
+    const s2 = setup('fixed4', 'fixed1');
+    give(s2, 0, 'barracks', 'barracks');
+    give(s2, 1, 'palisade', 'watchtower');
+    applyAction(s2, data, { type: 'roll' });
+    expect(s2.players[1].hp).toBe(180 - (30 - 3 - 5));
   });
   it('関所は相手の所持コインを上限に奪う', () => {
     const s = setup('fixed1', 'fixed6');

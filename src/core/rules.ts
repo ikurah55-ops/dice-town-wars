@@ -390,7 +390,7 @@ function resolveRoll(state: BattleState, data: GameData) {
   if (attackTotal > 0) {
     const reduced = Math.min(attackTotal, state.damageShield);
     const dealt = attackTotal - reduced;
-    if (reduced > 0) log(state, other, `見張り塔で${reduced}軽減`, 'info');
+    if (reduced > 0) log(state, other, `守りで${reduced}軽減`, 'info');
     damage(state, other, dealt);
     log(state, side, `${them.name}に合計${dealt}ダメージ！`, 'damage', { kind: 'hit', target: other, amount: dealt, blocked: reduced });
     if (checkWinner(state)) return;
