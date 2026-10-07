@@ -1188,3 +1188,214 @@ button {
     font-size: 12.5px;
   }
 }
+
+/* ---------- 出目の表示とエフェクト ---------- */
+.battle {
+  position: relative;
+}
+.fx-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  overflow: hidden;
+}
+.big-die {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25) 60%, transparent);
+  pointer-events: none;
+  animation: fade 0.15s;
+}
+.big-die-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: dieLand 0.45s cubic-bezier(0.25, 1.6, 0.5, 1);
+}
+.big-die .die {
+  box-shadow: 0 0 0 4px var(--gold), 0 0 40px rgba(255, 207, 74, 0.7), 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+.big-die .die-enemy {
+  box-shadow: 0 0 0 4px var(--enemy), 0 0 40px rgba(255, 90, 60, 0.7), 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+.big-die-label {
+  font-size: 18px;
+  font-weight: 800;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+.big-die-label b {
+  font-size: 30px;
+  color: #ffd877;
+  margin-left: 4px;
+}
+@keyframes dieLand {
+  0% {
+    transform: scale(2.2) rotate(-40deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.92) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.fx-text {
+  position: absolute;
+  white-space: nowrap;
+  font-weight: 900;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 0, 0, 0.6);
+}
+.fx-text b {
+  font-size: 1.25em;
+}
+.fx-eco {
+  color: #ffe27a;
+}
+.fx-atk {
+  color: #ffb08a;
+}
+.fx-dmg {
+  color: #ff4a34;
+  -webkit-text-stroke: 1.5px #fff1e0;
+}
+.fx-ctr {
+  color: #9ad8ff;
+}
+.fx-zap {
+  color: #7ac8ff;
+  -webkit-text-stroke: 1.5px #ffffff;
+}
+.fx-heal {
+  color: #9affb0;
+}
+
+.fx-coin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff6c0, #f2c94c 45%, #a86a12);
+  box-shadow: 0 0 8px rgba(255, 210, 80, 0.9), inset 0 0 0 2px rgba(138, 84, 8, 0.5);
+}
+.fx-fireball {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fffbe0, #ffb02e 40%, #e0381a 75%, transparent);
+  box-shadow: 0 0 14px 4px rgba(255, 110, 40, 0.8);
+}
+.fx-burst {
+  position: absolute;
+  border-radius: 50%;
+}
+.fx-burst-atk {
+  background: radial-gradient(circle, #fffbe0 0%, #ffb02e 25%, rgba(224, 56, 26, 0.75) 50%, rgba(224, 56, 26, 0) 70%);
+}
+.fx-burst-ctr {
+  background: radial-gradient(circle, #ffffff 0%, #9ae6ff 25%, rgba(47, 106, 168, 0.7) 50%, rgba(47, 106, 168, 0) 70%);
+}
+.fx-flash {
+  position: absolute;
+  inset: 0;
+}
+.fx-flash-red {
+  background: radial-gradient(circle, rgba(255, 60, 30, 0.2), rgba(200, 20, 10, 0.75));
+}
+.fx-flash-blue {
+  background: radial-gradient(circle, rgba(120, 200, 255, 0.2), rgba(30, 90, 200, 0.7));
+}
+.fx-dome {
+  position: absolute;
+  border-radius: 50% 50% 18px 18px / 70% 70% 18px 18px;
+  border: 3px solid #9ae6ff;
+  background: radial-gradient(ellipse at center, rgba(154, 230, 255, 0.05), rgba(90, 180, 255, 0.35));
+  box-shadow: 0 0 24px rgba(122, 216, 255, 0.8), inset 0 0 24px rgba(122, 216, 255, 0.6);
+}
+.fx-bolt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 6px #7ad8ff);
+}
+.fx-sparkle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #c8ffd4;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  filter: drop-shadow(0 0 4px #6aff8a);
+}
+
+.bchip.fx-pulse-eco,
+.bchip.fx-pulse-atk,
+.bchip.fx-pulse-ctr {
+  animation: chipPulse 0.6s ease-out;
+}
+.bchip.fx-pulse-eco {
+  --pulse: rgba(255, 210, 80, 0.95);
+}
+.bchip.fx-pulse-atk {
+  --pulse: rgba(255, 90, 50, 0.95);
+}
+.bchip.fx-pulse-ctr {
+  --pulse: rgba(122, 200, 255, 0.95);
+}
+@keyframes chipPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--pulse);
+  }
+  35% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 4px var(--pulse), 0 0 18px var(--pulse);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.coin-badge.fx-bump {
+  animation: bump 0.35s ease-out;
+}
+@keyframes bump {
+  40% {
+    transform: scale(1.35);
+    box-shadow: 0 0 16px rgba(255, 210, 80, 0.9);
+  }
+}
+.hp-bar.fx-hurt {
+  animation: hurt 0.45s ease-out;
+}
+@keyframes hurt {
+  20% {
+    box-shadow: 0 0 0 3px #ff5a3a, 0 0 18px #ff5a3a;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .big-die-inner,
+  .bchip.fx-pulse-eco,
+  .bchip.fx-pulse-atk,
+  .bchip.fx-pulse-ctr {
+    animation: none;
+  }
+}

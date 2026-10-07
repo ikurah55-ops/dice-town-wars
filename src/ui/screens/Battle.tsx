@@ -3,12 +3,17 @@ import { chooseAction, type AiProfile } from '../../core/ai';
 import { describeCard } from '../../core/cards';
 import { bossMaxHp } from '../../core/data';
 import { applyAction, buyError, createBattle, destroyTargets } from '../../core/rules';
-import type { Action, BattleState, BossDef, GameData, PlayerState, Side } from '../../core/types';
+import type { Action, BattleState, BossDef, Fx, GameData, PlayerState, Side } from '../../core/types';
 import { CardView, Die, MiniDie, Modal } from '../components';
+import { groupFx, playFx } from '../fx';
 import type { BuildResult } from './Build';
 import { HowToPlay } from './Title';
 
 const ROLL_MS = 650;
+const SHOW_FACE_MS = 1000; // 出目を大きく見せる時間
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+type View = { hp: [number, number]; coins: [number, number] };
 const CPU_DELAY = { roll: 700, buy: 800, other: 650 };
 const FACES = [1, 2, 3, 4, 5, 6];
 
@@ -34,6 +39,21 @@ export function Battle({
     ),
   );
   const [rolling, setRolling] = useState(false);
+  const [busy, setBusy] = useState(false); // 出目の演出中は操作を止める
+  const [bigDie, setBigDie] = useState<{ face: number; enemy: boolean } | null>(null);
+  const [preview, setPreview] = useState<number | null>(null); // 演出中に盤面で光らせる出目
+  const [view, setView] = useState<View | null>(null); // 演出中のHP・コイン表示
+  const stageRef = useRef<HTMLDivElement>(null);
+  const fxRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true; // StrictMode の再マウントでも true に戻す
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   const [rollFace, setRollFace] = useState<number>(1);
   const [marketOpen, setMarketOpen] = useState(false);
   const [faceTarget, setFaceTarget] = useState<string | null>(null); // 封印・沈黙の目指定
@@ -57,28 +77,67 @@ export function Battle({
     });
   };
 
-  const animateRoll = (a: Action) => {
-    setRolling(true);
-    const iv = setInterval(() => setRollFace(1 + Math.floor(Math.random() * 6)), 70);
-    setTimeout(() => {
+  /** 振る → 出目を1秒見せる → 効果の演出 → 状態を確定 */
+  const animateRoll = async (a: Action) => {
+    const showRoll = a.type !== 'keep'; // 女神で「この目で決定」したときは振り演出なし
+    const prev = stateRef.current;
+    const next = structuredClone(prev);
+    try {
+      applyAction(next, data, a);
+    } catch (e) {
+      console.warn(e);
+      return;
+    }
+    setBusy(true);
+    const face = next.lastRoll!;
+    if (showRoll) {
+      setRolling(true);
+      const iv = setInterval(() => setRollFace(1 + Math.floor(Math.random() * 6)), 70);
+      await sleep(ROLL_MS);
       clearInterval(iv);
+      if (!alive.current) return;
       setRolling(false);
-      dispatch(a);
-    }, ROLL_MS);
+      setPreview(face);
+      setBigDie({ face, enemy: prev.active === 1 });
+      await sleep(SHOW_FACE_MS);
+      if (!alive.current) return;
+      setBigDie(null);
+    } else setPreview(face);
+
+    const fxs = groupFx(next.log.slice(prev.log.length).flatMap((l) => (l.fx ? [l.fx] : [])));
+    if (fxs.length > 0 && fxRef.current && stageRef.current) {
+      const v: View = {
+        hp: [prev.players[0].hp, prev.players[1].hp],
+        coins: [prev.players[0].coins, prev.players[1].coins],
+      };
+      setView({ ...v });
+      const ctx = { root: fxRef.current, stage: stageRef.current, data, face };
+      for (const fx of fxs) {
+        await playFx(ctx, fx, () => {
+          applyFxToView(v, fx);
+          setView({ hp: [...v.hp], coins: [...v.coins] });
+        });
+        if (!alive.current) return;
+      }
+    }
+    setState(next);
+    setView(null);
+    setPreview(null);
+    setBusy(false);
   };
 
   // CPUの手番を自動で進める
   useEffect(() => {
-    if (state.phase === 'over' || state.active !== 1 || rolling) return;
+    if (state.phase === 'over' || state.active !== 1 || busy) return;
     const a = chooseAction(state, data, ai, Math.random);
     const delay = a.type === 'roll' || a.type === 'reroll' ? CPU_DELAY.roll : a.type === 'buy' ? CPU_DELAY.buy : CPU_DELAY.other;
     const t = setTimeout(() => {
-      if (a.type === 'roll' || a.type === 'reroll') animateRoll(a);
+      if (a.type === 'roll' || a.type === 'reroll' || a.type === 'keep') void animateRoll(a);
       else dispatch(a);
     }, delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, rolling]);
+  }, [state, busy]);
 
   // 自分の購入フェーズに入ったら市場を開き、手番が移ったら閉じる
   useEffect(() => {
@@ -104,6 +163,8 @@ export function Battle({
   const canBuy = myTurn && state.phase === 'buy';
   const { afterTurn } = data.config.longBattle;
 
+  const shown = (p: PlayerState, side: Side): PlayerState => (view ? { ...p, hp: view.hp[side], coins: view.coins[side] } : p);
+
   const tryBuy = (id: string) => {
     if (!canBuy) {
       setToast('購入は自分の購入フェーズで');
@@ -122,7 +183,7 @@ export function Battle({
   };
 
   return (
-    <div className="screen battle">
+    <div className="screen battle" ref={stageRef}>
       {/* 上：CPU */}
       <div className={`bar bar-enemy ${state.active === 1 && state.phase !== 'over' ? 'is-active' : ''}`}>
         <span className="turn-label">
@@ -131,7 +192,7 @@ export function Battle({
             <span className="long-warn">{state.turn >= afterTurn ? '長期戦！' : `長期戦まで${afterTurn - state.turn + 1}`}</span>
           )}
         </span>
-        <StatusLine p={cpu} data={data} onMagic={setCardDetail} />
+        <StatusLine p={shown(cpu, 1)} side={1} data={data} onMagic={setCardDetail} />
         <button className="btn-icon" onClick={() => setMenu(true)} aria-label="オプション">
           ☰
         </button>
@@ -140,7 +201,7 @@ export function Battle({
       {/* 中央：出目ごとの盤面 */}
       <Board
         data={data}
-        state={state}
+        state={preview !== null ? { ...state, lastRoll: preview, phase: 'reroll' } : state}
         onFace={setFaceDetail}
         onCard={setCardDetail}
       />
@@ -150,7 +211,7 @@ export function Battle({
         <div className={`side-turn ${state.phase === 'over' ? (state.winner === 0 ? 'win' : 'lose') : state.active === 0 ? 'mine' : 'theirs'}`}>
           {state.phase === 'over' ? (state.winner === 0 ? '勝利！' : '敗北…') : state.active === 0 ? 'あなたの手番' : `${cpu.name}の手番`}
         </div>
-        <Die value={rolling ? rollFace : state.lastRoll} rolling={rolling} size={56} enemy={state.active === 1} />
+        <Die value={rolling ? rollFace : (preview ?? state.lastRoll)} rolling={rolling} size={56} enemy={state.active === 1} />
         <button className="side-log" onClick={() => setLogOpen(true)} aria-label="ログを見る">
           {state.log.slice(-3).map((l, i) => (
             <span key={state.log.length - 3 + i} className={`log-line kind-${l.kind} side-${l.side ?? 'x'}`}>
@@ -163,16 +224,16 @@ export function Battle({
             デッキを見る
           </button>
           {myTurn && state.phase === 'roll' && (
-            <button className="btn btn-primary btn-side" disabled={rolling} onClick={() => animateRoll({ type: 'roll' })}>
+            <button className="btn btn-primary btn-side" disabled={busy} onClick={() => void animateRoll({ type: 'roll' })}>
               サイコロを振る
             </button>
           )}
-          {myTurn && state.phase === 'reroll' && !rolling && (
+          {myTurn && state.phase === 'reroll' && !busy && (
             <>
-              <button className="btn btn-magic btn-side" onClick={() => animateRoll({ type: 'reroll' })}>
+              <button className="btn btn-magic btn-side" onClick={() => void animateRoll({ type: 'reroll' })}>
                 振り直す
               </button>
-              <button className="btn btn-primary btn-side" onClick={() => dispatch({ type: 'keep' })}>
+              <button className="btn btn-primary btn-side" onClick={() => void animateRoll({ type: 'keep' })}>
                 {state.lastRoll}で決定
               </button>
             </>
@@ -188,8 +249,18 @@ export function Battle({
 
       {/* 下：自分 */}
       <div className={`bar bar-me ${state.active === 0 && state.phase !== 'over' ? 'is-active' : ''}`}>
-        <StatusLine p={me} data={data} onMagic={setCardDetail} />
+        <StatusLine p={shown(me, 0)} side={0} data={data} onMagic={setCardDetail} />
       </div>
+
+      <div className="fx-layer" ref={fxRef} aria-hidden="true" />
+      {bigDie && (
+        <div className="big-die" aria-live="polite">
+          <div className="big-die-inner">
+            <Die value={bigDie.face} size={120} enemy={bigDie.enemy} />
+            <div className="big-die-label">{bigDie.enemy ? cpu.name : 'あなた'}の出目 <b>{bigDie.face}</b></div>
+          </div>
+        </div>
+      )}
 
       {marketOpen && (
         <div className="market">
@@ -283,6 +354,26 @@ export function Battle({
   );
 }
 
+/** 演出のタイミングで表示用のHP・コインを進める */
+function applyFxToView(v: View, fx: Fx) {
+  switch (fx.kind) {
+    case 'coin':
+      v.coins[fx.side] += fx.amount;
+      break;
+    case 'hit':
+    case 'zap':
+      v.hp[fx.target] -= fx.amount;
+      break;
+    case 'heal':
+      v.hp[fx.side] += fx.amount;
+      break;
+    case 'steal':
+      v.coins[fx.from] -= fx.amount;
+      v.coins[fx.to] += fx.amount;
+      break;
+  }
+}
+
 // ---------- 上下のステータス ----------
 
 function useDelta(n: number) {
@@ -296,25 +387,19 @@ function useDelta(n: number) {
   return delta;
 }
 
-function StatusLine({ p, data, onMagic }: { p: PlayerState; data: GameData; onMagic: (id: string) => void }) {
+function StatusLine({ p, side, data, onMagic }: { p: PlayerState; side: Side; data: GameData; onMagic: (id: string) => void }) {
   const ratio = Math.max(0, p.hp) / p.maxHp;
-  const hpDelta = useDelta(p.hp);
   const coinDelta = useDelta(p.coins);
   return (
     <>
       <span className="bar-name">{p.name}</span>
-      <div className="hp-bar">
+      <div className="hp-bar" data-hp={side}>
         <div className={`hp-fill ${ratio < 0.3 ? 'low' : ''}`} style={{ width: `${ratio * 100}%` }} />
       </div>
       <span className="hp-text">
         HP {Math.max(0, p.hp)}/{p.maxHp}
-        {hpDelta && (
-          <span key={hpDelta.k} className={`float ${hpDelta.v < 0 ? 'neg' : 'pos'}`}>
-            {hpDelta.v > 0 ? `+${hpDelta.v}` : hpDelta.v}
-          </span>
-        )}
       </span>
-      <span className="coin-badge" aria-label={`コイン${p.coins}`}>
+      <span className="coin-badge" data-coin={side} aria-label={`コイン${p.coins}`}>
         {p.coins}
         {coinDelta && (
           <span key={coinDelta.k} className={`float coin-float ${coinDelta.v < 0 ? 'neg' : 'pos'}`}>
@@ -373,6 +458,9 @@ function Zone({ data, state, side, onCard }: { data: GameData; state: BattleStat
             key={key}
             className={`bchip cat-${card.category} ${hit ? 'is-hit' : ''}`}
             style={{ gridColumn: `${run[0]} / ${run[1] + 1}` }}
+            data-card={id}
+            data-side={side}
+            data-run={`${run[0]}-${run[1]}`}
             onClick={() => onCard(id)}
           >
             {counter && <span className="bchip-shield">🛡</span>}

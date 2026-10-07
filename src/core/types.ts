@@ -166,11 +166,22 @@ export interface BattleState {
   nextUid: number;
 }
 
+/** 演出用の構造化イベント（UIがエフェクトを出すのに使う。ロジックには影響しない） */
+export type Fx =
+  | { kind: 'coin'; side: Side; amount: number; card: string } // 経済カードの獲得
+  | { kind: 'attack'; side: Side; amount: number; card: string } // 攻撃カード1枚分（軽減前）
+  | { kind: 'hit'; target: Side; amount: number; blocked: number } // 攻撃の合計が命中
+  | { kind: 'shield'; side: Side; amount: number; card: string } // 見張り塔など
+  | { kind: 'heal'; side: Side; amount: number; card: string }
+  | { kind: 'steal'; from: Side; to: Side; amount: number; card: string }
+  | { kind: 'zap'; target: Side; amount: number; card: string }; // カウンターのダメージ
+
 export interface LogEntry {
   turn: number;
   side: Side | null;
   text: string;
   kind: 'info' | 'roll' | 'coin' | 'damage' | 'heal' | 'buy' | 'magic' | 'system';
+  fx?: Fx;
 }
 
 export type Action =

@@ -11,6 +11,7 @@ import type {
   CardDef,
   Combatant,
   Effect,
+  Fx,
   GameData,
   LogEntry,
   PlayerState,
@@ -85,9 +86,9 @@ export function createBattle(
 
 // ---------- 小道具 ----------
 
-function log(state: BattleState, side: Side | null, text: string, kind: LogEntry['kind'] = 'info') {
+function log(state: BattleState, side: Side | null, text: string, kind: LogEntry['kind'] = 'info', fx?: Fx) {
   if (state.quiet) return;
-  state.log.push({ turn: state.turn, side, text, kind });
+  state.log.push(fx ? { turn: state.turn, side, text, kind, fx } : { turn: state.turn, side, text, kind });
 }
 
 function rand(state: BattleState): number {
@@ -329,21 +330,21 @@ function resolveRoll(state: BattleState, data: GameData) {
       switch (e.type) {
         case 'reduce_damage':
           state.damageShield += amount;
-          log(state, other, `${card.name}：このターンの被ダメージ-${amount}`, 'info');
+          log(state, other, `${card.name}：このターンの被ダメージ-${amount}`, 'info', { kind: 'shield', side: other, amount, card: card.id });
           break;
         case 'heal': {
           const h = heal(them, amount);
-          log(state, other, `${card.name}：HPを${h}回復`, 'heal');
+          log(state, other, `${card.name}：HPを${h}回復`, 'heal', { kind: 'heal', side: other, amount: h, card: card.id });
           break;
         }
         case 'steal_coins': {
           const n = steal(me, them, amount);
-          log(state, other, stealText(card.name, me.name, n), 'coin');
+          log(state, other, stealText(card.name, me.name, n), 'coin', { kind: 'steal', from: side, to: other, amount: n, card: card.id });
           break;
         }
         case 'deal_damage':
           damage(state, side, amount);
-          log(state, other, `${card.name}：${me.name}に${amount}ダメージ`, 'damage');
+          log(state, other, `${card.name}：${me.name}に${amount}ダメージ`, 'damage', { kind: 'zap', target: side, amount, card: card.id });
           break;
       }
     }
@@ -368,13 +369,13 @@ function resolveRoll(state: BattleState, data: GameData) {
       }
       coins = Math.floor((coins + (mods.economyBonus ?? 0)) * econMult * faceMult);
       me.coins += coins;
-      log(state, side, `${card.name}：+${coins}コイン`, 'coin');
+      log(state, side, `${card.name}：+${coins}コイン`, 'coin', { kind: 'coin', side, amount: coins, card: card.id });
     } else if (card.category === 'attack') {
       for (const e of card.effects) {
         if (e.type !== 'deal_damage') continue;
         const dmg = Math.floor((scaleAmount(e.amount, levelOf(me, card.id)) + (mods.attackBonus ?? 0)) * atkMult * faceMult);
         attackTotal += dmg;
-        log(state, side, `${card.name}：${dmg}ダメージ`, 'damage');
+        log(state, side, `${card.name}：${dmg}ダメージ`, 'damage', { kind: 'attack', side, amount: dmg, card: card.id });
       }
     }
   }
@@ -383,7 +384,7 @@ function resolveRoll(state: BattleState, data: GameData) {
     const dealt = attackTotal - reduced;
     if (reduced > 0) log(state, other, `見張り塔で${reduced}軽減`, 'info');
     damage(state, other, dealt);
-    log(state, side, `${them.name}に合計${dealt}ダメージ！`, 'damage');
+    log(state, side, `${them.name}に合計${dealt}ダメージ！`, 'damage', { kind: 'hit', target: other, amount: dealt, blocked: reduced });
     if (checkWinner(state)) return;
   }
   if (attackTotal === 0 && !me.facilities.some((f) => data.cards[f.cardId].faces?.includes(face))) {
