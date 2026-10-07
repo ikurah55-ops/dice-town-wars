@@ -30,7 +30,7 @@
 
   { "id": "seal", "name": "封印の札", "category": "magic", "cost": 3, "timing": "own_roll",
     "effects": [{ "type": "ban_face", "target": "self" }] },
-  { "id": "thieves", "name": "盗賊団", "category": "magic", "cost": 4, "timing": "turn_start",
+  { "id": "thieves", "name": "盗賊団", "category": "magic", "cost": 5, "timing": "turn_start",
     "effects": [{ "type": "steal_coins", "amount": 3 }] },
   { "id": "tax", "name": "徴税令", "category": "magic", "cost": 4, "timing": "turn_start",
     "effects": [{ "type": "income_bonus", "amount": 3 }] },

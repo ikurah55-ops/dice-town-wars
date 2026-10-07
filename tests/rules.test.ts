@@ -170,7 +170,7 @@ describe('魔法', () => {
   it('盗賊団：購入時と手番開始時に3コイン奪う', () => {
     const s = setup('fixed6', 'fixed6', magicLoadout);
     applyAction(s, data, { type: 'roll' });
-    s.players[0].coins = 4;
+    s.players[0].coins = data.cards.thieves.cost; // 購入でちょうど0枚になる
     s.players[1].coins = 5;
     applyAction(s, data, { type: 'buy', cardId: 'thieves' });
     expect(s.players[0].coins).toBe(3);
