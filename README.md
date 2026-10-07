@@ -3,6 +3,10 @@
 出目で発動するカードで戦う、CPU対戦型デッキ構築ゲーム。成長要素なし・ステージ1つの試作版。
 仕様は `claude-code-prompt_dice-town.md` を参照。
 
+**遊ぶ**：https://ikurah55-ops.github.io/dice-town-wars/ （スマホでは横向き。ホーム画面に追加するとアプリとして起動）
+
+`main` ブランチに push すると GitHub Actions がテスト・ビルドして GitHub Pages に自動デプロイします。
+
 ## コマンド
 
 | コマンド | 内容 |
