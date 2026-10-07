@@ -565,6 +565,60 @@ const ART: Record<string, ReactNode> = {
     </>
   ),
 
+  spearmen: (
+    <>
+      <Bg fill="dt-sky-gold" />
+      <Glow x={88} y={40} r={40} c="warm" />
+      <path d="M0 50 Q30 42 60 47 T120 44 V80 H0Z" fill="#6a321e" />
+      {Array.from({ length: 12 }, (_, i) => {
+        const x = 4 + i * 10;
+        return (
+          <g key={i}>
+            <line x1={x} y1="78" x2={x + 22} y2="12" stroke="#3a1e0a" strokeWidth="1.6" />
+            <path d={`M${x + 20.5} 15 L${x + 24} 6 L${x + 24.5} 15.5Z`} fill="url(#dt-steel)" />
+          </g>
+        );
+      })}
+      {Array.from({ length: 7 }, (_, i) => {
+        const x = 9 + i * 17;
+        return (
+          <g key={i}>
+            <circle cx={x} cy="56" r="5" fill="url(#dt-iron)" />
+            <path d={`M${x - 8} 58 H${x + 8} V68 Q${x} 76 ${x - 8} 68Z`} fill="url(#dt-blue-cloth)" stroke="#c9a24a" strokeWidth="0.9" />
+            <path d={`M${x} 60 V70 M${x - 4} 64 H${x + 4}`} stroke="#ffd860" strokeWidth="1" />
+          </g>
+        );
+      })}
+      <rect y="72" width="120" height="8" fill="#2a1408" />
+      <Vig />
+    </>
+  ),
+
+  knights: (
+    <>
+      <Bg fill="dt-sky-dusk" />
+      <Glow x={30} y={46} r={50} c="warm" />
+      <circle cx="30" cy="46" r="10" fill="#fff0c0" opacity="0.9" />
+      <path d="M0 58 Q40 50 80 56 T120 54 V80 H0Z" fill="#1a0c14" />
+      <g fill="#5a3a3a" opacity="0.55">
+        <circle cx="30" cy="68" r="9" />
+        <circle cx="18" cy="70" r="7" />
+        <circle cx="42" cy="72" r="6" />
+      </g>
+      <g fill="#120810">
+        <path d="M38 62 Q42 50 56 48 L72 46 Q80 40 86 42 L90 38 L92 44 Q96 50 92 52 L86 52 Q84 58 78 60 L76 74 H72 L72 62 L58 62 L54 74 H50 L52 62 Q44 66 40 74 H36 Q36 66 38 62Z" />
+        <path d="M60 46 Q58 36 64 32 Q70 30 72 36 L72 46Z" />
+        <circle cx="67" cy="28" r="4" />
+      </g>
+      <path d="M67 24 Q64 16 70 14" stroke="url(#dt-red-cloth)" strokeWidth="2.4" fill="none" />
+      <path d="M60 40 L114 22" stroke="url(#dt-steel)" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M96 28 L108 22 L106 30Z" fill="url(#dt-red-cloth)" />
+      <ellipse cx="62" cy="44" rx="5" ry="7" fill="url(#dt-blue-cloth)" stroke="#c9a24a" strokeWidth="0.8" />
+      <Particles seed={23} n={14} box={[0, 50, 60, 78]} r={[0.4, 1.2]} fill="#c8a080" op={0.6} />
+      <Vig />
+    </>
+  ),
+
   cannon: (
     <>
       <rect width="120" height="80" fill="#1a1416" />

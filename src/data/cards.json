@@ -18,6 +18,10 @@
     "effects": [{ "type": "deal_damage", "amount": 12 }] },
   { "id": "cannon", "name": "大砲台", "category": "attack", "cost": 10, "faces": [1, 2],
     "effects": [{ "type": "deal_damage", "amount": 30 }] },
+  { "id": "spearmen", "name": "槍兵隊", "category": "attack", "cost": 4, "faces": [2, 3],
+    "effects": [{ "type": "deal_damage", "amount": 12 }] },
+  { "id": "knights", "name": "騎士団", "category": "attack", "cost": 8, "faces": [3, 4],
+    "effects": [{ "type": "deal_damage", "amount": 24 }] },
 
   { "id": "watchtower", "name": "見張り塔", "category": "counter", "cost": 2, "faces": [4, 5],
     "effects": [{ "type": "reduce_damage", "amount": 5 }] },

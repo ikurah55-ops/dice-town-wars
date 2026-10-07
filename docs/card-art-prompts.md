@@ -38,6 +38,8 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | `catapult.jpg` | 投石機 | A wooden siege catapult launching a flaming boulder toward a distant burning castle, crimson sky, sparks and embers, soldiers silhouetted at its base. |
 | `archers.jpg` | 弓兵隊 | A line of medieval archers on a ridge drawing longbows, a volley of arrows arcing across a stormy sunset sky, red tabards, banners in the wind. |
 | `cannon.jpg` | 大砲台 | A massive bronze-banded iron cannon on a stone bastion firing, huge muzzle flash and billowing smoke, a cannonball streaking away, gunners shielding their faces. |
+| `spearmen.jpg` | 槍兵隊 | A disciplined phalanx of medieval spearmen in blue tabards holding a wall of kite shields, long spears angled forward, golden-hour light, dusty battlefield, banners behind them. |
+| `knights.jpg` | 騎士団 | A charge of heavily armored knights on horseback with lowered lances and red pennants, thundering across a field at sunset, dust clouds, castle on a distant hill. |
 
 ### カウンターカード
 
