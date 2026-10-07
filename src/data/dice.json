@@ -1,0 +1,4 @@
+[
+  { "id": "normal", "name": "普通のサイコロ", "faces": [1, 2, 3, 4, 5, 6], "available": true },
+  { "id": "even", "name": "偶数サイコロ", "faces": [2, 2, 4, 4, 6, 6], "available": false, "modifiers": { "incomeBonus": 0 } }
+]

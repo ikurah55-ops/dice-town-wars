@@ -1,0 +1,77 @@
+import { useState } from 'react';
+import { Die, Modal } from '../components';
+
+/** スマホでは全画面＋横向き固定を試みる（対応していない環境では何もしない） */
+async function tryLandscape() {
+  if (!window.matchMedia('(pointer: coarse)').matches) return;
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+    await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape');
+  } catch {
+    /* iOS Safari などは非対応 */
+  }
+}
+
+export function Title({ onStart }: { onStart: () => void }) {
+  const [help, setHelp] = useState(false);
+  return (
+    <div className="screen title-screen">
+      <div className="title-left">
+        <div className="title-dice">
+          <Die value={5} size={60} />
+          <Die value={3} size={60} enemy />
+        </div>
+        <h1 className="logo">
+          ダイスタウン
+          <br />
+          <span>ウォーズ</span>
+        </h1>
+        <p className="tagline">出目で動く街を育てて、ボスを倒せ！</p>
+      </div>
+      <div className="title-buttons">
+        <button
+          className="btn btn-primary btn-big"
+          onClick={() => {
+            void tryLandscape();
+            onStart();
+          }}
+        >
+          はじめる
+        </button>
+        <button className="btn btn-ghost" onClick={() => setHelp(true)}>
+          遊び方
+        </button>
+        <p className="version">試作版 v0.1</p>
+      </div>
+      {help && <HowToPlay onClose={() => setHelp(false)} />}
+    </div>
+  );
+}
+
+export function HowToPlay({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal title="遊び方" onClose={onClose}>
+      <ol className="howto">
+        <li>
+          <b>サイコロを振る</b>：出た目と同じ数字を持つ自分の施設が発動します。
+        </li>
+        <li>
+          <b>経済カード</b>（緑）でコインを稼ぎ、<b>攻撃カード</b>（赤）で相手にダメージ。
+        </li>
+        <li>
+          <b>カウンター</b>（青・🛡）は<b>相手</b>のサイコロの目で発動します。
+        </li>
+        <li>
+          <b>魔法</b>（紫）は買った手番から3回分効果が続く使い切りカード。
+        </li>
+        <li>
+          振ったあとは<b>市場</b>でコインがあるだけカードを購入。同じ施設を複数持つと効果も枚数倍！
+        </li>
+        <li>
+          相手のHPを0にしたら勝ち。15ターンを超えると毎ターン両者が最大HPの1割ダメージを受けます。
+        </li>
+      </ol>
+      <p className="hint">盤面は出目ごとの列に並んでいます。下のサイコロをタップすると、その目が出たら何が起きるか確認できます。</p>
+    </Modal>
+  );
+}

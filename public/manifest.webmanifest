@@ -1,0 +1,19 @@
+{
+  "name": "ダイスタウン・ウォーズ",
+  "short_name": "ダイスタウン",
+  "description": "出目で発動するカードで街を育ててボスと戦うデッキ構築バトル",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "lang": "ja",
+  "background_color": "#2b1d14",
+  "theme_color": "#2b1d14",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
