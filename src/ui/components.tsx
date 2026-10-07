@@ -45,15 +45,16 @@ export function CardView({
           </span>
         )}
       </div>
+      {/* イラストを最大限広く見せ、コスト・在庫・効果文は絵の上に重ねる */}
       <div className="card-art">
         <CardArt id={card.id} />
+        <span className="cost" aria-hidden="true">
+          {card.cost}
+        </span>
         {stock !== undefined && <span className={`stock ${stock === 0 ? 'stock-out' : ''}`}>残{stock}</span>}
         {badge && <span className="card-badge">{badge}</span>}
+        <div className="card-text">{describeCard(card, data)}</div>
       </div>
-      <span className="cost" aria-hidden="true">
-        {card.cost}
-      </span>
-      <div className="card-text">{describeCard(card, data)}</div>
     </button>
   );
 }
