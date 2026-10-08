@@ -14,6 +14,7 @@ import {
 } from '../../core/story';
 import type { GameData } from '../../core/types';
 import { CardView, Modal } from '../components';
+import mapLayout from '../../data/map_layout.json';
 
 const STEP_X = 104; // マスの間隔
 const PAD_X = 130; // 左端からステージ1まで（STARTの旗を置く）
@@ -27,6 +28,49 @@ const REGION_IMAGES: Record<string, string> = Object.fromEntries(
     import.meta.glob('../../assets/map/*.{jpg,jpeg,png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>,
   ).map(([path, url]) => [path.replace(/^.*\/|\.[a-z]+$/g, ''), url]),
 );
+
+/** 背景画にマスが描き込まれている地方：マスの位置（絵に対する割合）と絵の縦横比 */
+const PAINTED = mapLayout as unknown as Record<string, { aspect: number; nodes: [number, number][] } | string>;
+
+interface Region {
+  k: number;
+  left: number;
+  width: number;
+  img?: string;
+  painted: boolean; // マスと道が絵に描き込まれている
+}
+
+/** 地方ごとに背景とマスの位置を決める。描き込みのある絵はその位置に、無ければ道を蛇行させて並べる */
+function layoutMap(N: number, h: number) {
+  const points: { x: number; y: number }[] = [];
+  const regions: Region[] = [];
+  const top = TOP + 34;
+  const bottom = h - BOTTOM - 20;
+  const mid = (top + bottom) / 2;
+  const amp = Math.max(20, (bottom - top) / 2);
+  let end = 0; // 前の地方の右端
+  for (let k = 0; k * 10 < N; k++) {
+    const count = Math.min(10, N - k * 10);
+    const img = REGION_IMAGES[`region${k + 1}`];
+    const lay = PAINTED[`region${k + 1}`];
+    const left = k === 0 ? 0 : end - SEAM;
+    if (img && lay && typeof lay !== 'string' && lay.nodes.length >= count) {
+      const w = h * lay.aspect;
+      for (let i = 0; i < count; i++) points.push({ x: left + lay.nodes[i][0] * w, y: lay.nodes[i][1] * h });
+      end = left + w;
+      regions.push({ k, left, width: w, img, painted: true });
+    } else {
+      const first = k === 0 ? PAD_X : end + STEP_X * 0.5;
+      for (let i = 0; i < count; i++) {
+        const g = k * 10 + i;
+        points.push({ x: first + i * STEP_X, y: mid + Math.sin(g * 0.9 + 0.6) * amp * (g % 3 === 1 ? 0.7 : 1) });
+      }
+      end = first + (count - 1) * STEP_X + (k * 10 + count >= N ? PAD_X : STEP_X * 0.5);
+      regions.push({ k, left, width: end - left, img, painted: false });
+    }
+  }
+  return { points, regions, width: end };
+}
 
 /** すごろく風のマップ。横に長い道に沿って 1〜50 のマスが並ぶ。10ステージごとに地方が変わる */
 export function StoryMap({
@@ -53,45 +97,31 @@ export function StoryMap({
   const current = Math.min(N, highestCleared(save) + 1);
   const unlockCount = unlockableCards(data, save).length;
 
-  // マスの位置（道をゆるやかに上下に蛇行させる）
-  const points = useMemo(() => {
-    const top = TOP + 34;
-    const bottom = h - BOTTOM - 20;
-    const mid = (top + bottom) / 2;
-    const amp = Math.max(20, (bottom - top) / 2);
-    return Array.from({ length: N }, (_, i) => ({
-      x: PAD_X + i * STEP_X,
-      y: mid + Math.sin(i * 0.9 + 0.6) * amp * (i % 3 === 1 ? 0.7 : 1),
-    }));
-  }, [N, h]);
-  const width = PAD_X * 2 + (N - 1) * STEP_X;
-  const start = { x: PAD_X - 84, y: points[0] ? points[0].y + 18 : h / 2 };
-  const all = [start, ...points];
-  const path = all
-    .map((p, i) => {
-      if (i === 0) return `M${p.x} ${p.y}`;
-      const q = all[i - 1];
-      const cx = (q.x + p.x) / 2;
-      return `C${cx} ${q.y} ${cx} ${p.y} ${p.x} ${p.y}`;
-    })
-    .join(' ');
-  // 道の途中の飾り（サイコロと宝箱）：5マスごとの間に置く
-  const decos = useMemo(
-    () =>
-      Array.from({ length: Math.floor((N - 1) / 5) }, (_, k) => {
-        const i = k * 5 + 2; // ステージ i+1 と i+2 の間（大ボスの王冠と重ならない位置）
-        const a = points[i];
-        const b = points[i + 1];
-        return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, kind: k % 2 === 0 ? ('dice' as const) : ('chest' as const) };
-      }),
-    [N, points],
-  );
-  // 地方の境目：ステージ10と11の間など
-  const regions = Array.from({ length: Math.ceil(N / 10) }, (_, k) => {
-    const left = k === 0 ? 0 : PAD_X + (k * 10 - 0.5) * STEP_X;
-    const right = k === Math.ceil(N / 10) - 1 ? width : PAD_X + ((k + 1) * 10 - 0.5) * STEP_X;
-    return { k, left, width: right - left };
-  });
+  const { points, regions, width } = useMemo(() => layoutMap(N, h), [N, h]);
+  const paintedOf = (i: number) => regions[Math.floor(i / 10)]?.painted ?? false;
+  // スタートの旗：最初の地方が描き込みの絵なら出さない（絵の中から始まる）
+  const start = paintedOf(0) ? null : { x: points[0].x - 84, y: points[0].y + 18 };
+  // 道：描き込みのある地方の中は絵の道を使い、それ以外をつなぐ
+  const seq = start ? [start, ...points] : points;
+  const off = start ? 1 : 0; // seq の添字 → ステージの添字
+  let path = '';
+  for (let j = 1; j < seq.length; j++) {
+    const ia = j - 1 - off;
+    const ib = j - off;
+    const inside = ia >= 0 && paintedOf(ia) && paintedOf(ib) && Math.floor(ia / 10) === Math.floor(ib / 10);
+    if (inside) continue;
+    const q = seq[j - 1];
+    const p = seq[j];
+    const cx = (q.x + p.x) / 2;
+    path += `M${q.x} ${q.y} C${cx} ${q.y} ${cx} ${p.y} ${p.x} ${p.y} `;
+  }
+  // 道の途中の飾り（サイコロと宝箱）：5マスごとの間に置く（描き込みのある地方には置かない）
+  const decos = Array.from({ length: Math.floor((N - 1) / 5) }, (_, k) => {
+    const i = k * 5 + 2; // ステージ i+1 と i+2 の間（大ボスの王冠と重ならない位置）
+    const p = points[i];
+    const q = points[i + 1];
+    return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2, kind: k % 2 === 0 ? ('dice' as const) : ('chest' as const), skip: paintedOf(i) };
+  }).filter((d) => !d.skip);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -117,14 +147,11 @@ export function StoryMap({
       <div className="map-scroll" ref={scrollRef}>
         <div className="map-world" style={{ width, height: h }}>
           {/* 地方ごとの背景 */}
-          {regions.map((r) => {
-            const img = REGION_IMAGES[`region${r.k + 1}`];
-            return (
-              <div key={r.k} className={`map-region region-${r.k + 1} ${r.k > 0 ? 'has-seam' : ''}`} style={{ left: r.left, width: r.width + SEAM }}>
-                {img ? <img src={img} alt="" draggable={false} /> : <RegionScenery k={r.k} w={r.width + SEAM} h={h} />}
-              </div>
-            );
-          })}
+          {regions.map((r) => (
+            <div key={r.k} className={`map-region region-${r.k + 1} ${r.k > 0 ? 'has-seam' : ''}`} style={{ left: r.left, width: r.width }}>
+              {r.img ? <img src={r.img} alt="" draggable={false} /> : <RegionScenery k={r.k} w={r.width} h={h} />}
+            </div>
+          ))}
           <svg className="map-path" width={width} height={h} aria-hidden="true">
             <path d={path} className="road-shadow" />
             <path d={path} className="road-edge" />
@@ -135,10 +162,12 @@ export function StoryMap({
               {d.kind === 'dice' ? <DiceDeco /> : <ChestDeco />}
             </span>
           ))}
-          <div className="map-start" style={{ left: start.x, top: start.y }} aria-hidden="true">
-            <span className="map-start-flag" />
-            <span className="map-start-disc">START</span>
-          </div>
+          {start && (
+            <div className="map-start" style={{ left: start.x, top: start.y }} aria-hidden="true">
+              <span className="map-start-flag" />
+              <span className="map-start-disc">START</span>
+            </div>
+          )}
           {points.map((p, i) => {
             const s = i + 1;
             const big = s % cfg.boss.bigBossEvery === 0;
