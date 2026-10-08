@@ -1,5 +1,6 @@
 // 出目解決後のエフェクト再生（Web Animations API で命令的に描く）
 import type { Fx, GameData, Side } from '../core/types';
+import { fmtCoins } from '../core/rules';
 import { sfx } from './audio';
 
 type Pt = { x: number; y: number };
@@ -17,13 +18,14 @@ export function groupFx(list: Fx[]): Fx[] {
     const last = out[out.length - 1];
     if (last && GROUPABLE.has(fx.kind) && last.kind === fx.kind && 'card' in last && 'card' in fx && last.card === fx.card && sameSide(last, fx)) {
       (last as { amount: number }).amount += (fx as { amount: number }).amount;
+      if (last.kind === 'coin' && fx.kind === 'coin') last.raw = (last.raw ?? last.amount - fx.amount) + (fx.raw ?? fx.amount);
     } else out.push({ ...fx } as Fx);
   }
   return out;
 }
 
 function sameSide(a: Fx, b: Fx): boolean {
-  return JSON.stringify({ ...a, amount: 0 }) === JSON.stringify({ ...b, amount: 0 });
+  return JSON.stringify({ ...a, amount: 0, raw: 0 }) === JSON.stringify({ ...b, amount: 0, raw: 0 });
 }
 
 export interface FxContext {
@@ -231,7 +233,7 @@ export async function playFx(ctx: FxContext, fx: Fx, onImpactRaw: () => void): P
       const from = center(ctx, chip, coinPt(ctx, fx.side));
       const to = coinPt(ctx, fx.side);
       pulse(chip, 'fx-pulse-eco');
-      popText(ctx, { x: from.x, y: from.y - 6 }, `${name} <b>+${fx.amount}</b>`, 'fx-eco', clamp(16 + fx.amount * 0.9, 16, 34));
+      popText(ctx, { x: from.x, y: from.y - 6 }, `${name} <b>+${fmtCoins(fx.raw ?? fx.amount)}</b>`, 'fx-eco', clamp(16 + fx.amount * 0.9, 16, 34));
       const n = fast ? 1 : clamp(fx.amount, 1, 14);
       const dur = fly(ctx, from, to, n, 'fx-coin', 620, 45, 50);
       await sleep(dur);
@@ -326,7 +328,7 @@ export async function playFx(ctx: FxContext, fx: Fx, onImpactRaw: () => void): P
       pulse(chipEl(ctx, fx.to, fx.card), 'fx-pulse-ctr');
       const from = coinPt(ctx, fx.from);
       const to = coinPt(ctx, fx.to);
-      popText(ctx, from, `${name} -${fx.amount}`, 'fx-ctr', 20);
+      popText(ctx, from, `${name} -${fmtCoins(fx.amount)}`, 'fx-ctr', 20);
       const n = fast ? 1 : clamp(fx.amount, 1, 10);
       const dur = fly(ctx, from, to, n, 'fx-coin', 620, 60, 30);
       await sleep(dur);
@@ -458,7 +460,7 @@ async function magicSteal(ctx: FxContext, fx: Extract<Fx, { kind: 'steal' }>, on
     ],
     { duration: 520, easing: 'ease-in-out' },
   ).finished.then(() => dash.remove());
-  popText(ctx, { x: from.x, y: from.y - 4 }, `-${fx.amount}`, 'fx-mag', 26, 900);
+  popText(ctx, { x: from.x, y: from.y - 4 }, `-${fmtCoins(fx.amount)}`, 'fx-mag', 26, 900);
   const n = reduced() ? 1 : clamp(fx.amount * 2, 2, 12);
   const dur = fly(ctx, from, to, n, 'fx-coin', 560, 35, 10, 12);
   await sleep(dur);
@@ -473,7 +475,7 @@ async function taxIncome(ctx: FxContext, fx: Extract<Fx, { kind: 'income' }>, on
   const to = coinPt(ctx, fx.side);
   pulse(q(ctx, `[data-magic="${fx.side}-${fx.card}"]`), 'fx-pulse-mag');
   const scrollPt = { x: clamp(to.x - 120, 140, 10000), y: fx.side === 1 ? to.y + 60 : to.y - 70 };
-  const sc = el(ctx, 'fx-scroll', scrollPt, `<span>📜 ${name}</span><b>収入 +${fx.amount}</b>`);
+  const sc = el(ctx, 'fx-scroll', scrollPt, `<span>📜 ${name}</span><b>収入 +${fmtCoins(fx.amount)}</b>`);
   sc.animate(
     [
       { transform: 'translate(-50%, -50%) scaleY(0.05)', opacity: 0 },
@@ -541,7 +543,7 @@ async function mercenary(ctx: FxContext, fx: Extract<Fx, { kind: 'merc' }>, onIm
     await sleep(700);
     return;
   }
-  popText(ctx, from, `-${fx.coins}枚`, 'fx-eco', 20, 800);
+  popText(ctx, from, `-${fmtCoins(fx.coins)}枚`, 'fx-eco', 20, 800);
   const n = reduced() ? 1 : clamp(fx.coins, 2, 12);
   const dur = fly(ctx, from, to, n, 'fx-sword', 560, 50, 60, 20);
   await sleep(dur + n * 50);

@@ -144,10 +144,9 @@ export function coinTotal(p: PlayerState): number {
   return Math.floor((p.coins + p.coinFrac) * 10 + 1e-6) / 10;
 }
 
-/** コインの量を小数第一位までの文字列に（整数なら .0 を付けない） */
+/** コインの量を小数第一位までの文字列に（切り捨て） */
 export function fmtCoins(n: number): string {
-  const v = Math.floor(n * 10 + 1e-6) / 10;
-  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  return (Math.floor(n * 10 + 1e-6) / 10).toFixed(1);
 }
 
 /** コインを得る（小数は端数として持ち越す）。実際に増えた枚数を返す */
@@ -170,7 +169,7 @@ export function magicUses(state: BattleState, data: GameData): number {
 }
 
 function stealText(card: string, from: string, n: number): string {
-  return n > 0 ? `${card}：${from}から${n}コイン奪った` : `${card}：${from}はコインを持っていない`;
+  return n > 0 ? `${card}：${from}から${fmtCoins(n)}コイン奪った` : `${card}：${from}はコインを持っていない`;
 }
 
 function heal(p: PlayerState, amount: number): number {
@@ -300,7 +299,7 @@ function gainIncome(state: BattleState, data: GameData) {
   }
   income = Math.max(0, income);
   me.coins += income;
-  log(state, side, `収入 +${income}コイン`, 'coin', bonusCard ? { kind: 'income', side, amount: income, card: bonusCard } : undefined);
+  log(state, side, `収入 +${fmtCoins(income)}コイン`, 'coin', bonusCard ? { kind: 'income', side, amount: income, card: bonusCard } : undefined);
   state.phase = 'roll';
 }
 
@@ -513,7 +512,7 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
       }
       else if (e.type === 'income_bonus') {
         me.coins += amount;
-        log(state, side, `${card.name}：+${amount}コイン`, 'coin', { kind: 'income', side, amount, card: card.id });
+        log(state, side, `${card.name}：+${fmtCoins(amount)}コイン`, 'coin', { kind: 'income', side, amount, card: card.id });
       } else if (e.type === 'destroy_facility') {
         if (targetsUnder(state, data, side, e.maxCost).length > 0) {
           consume(me, m, data);
@@ -591,7 +590,7 @@ function endTurn(state: BattleState, data: GameData) {
         const dmg = coins * e.amount;
         me.coins = 0;
         damage(state, opp(side), dmg);
-        log(state, side, `${card.name}：${coins}コイン払って${dmg}ダメージ`, 'damage', { kind: 'merc', side, target: opp(side), coins, amount: dmg, card: card.id });
+        log(state, side, `${card.name}：${fmtCoins(coins)}コイン払って${dmg}ダメージ`, 'damage', { kind: 'merc', side, target: opp(side), coins, amount: dmg, card: card.id });
       }
     }
     consume(me, m, data);
