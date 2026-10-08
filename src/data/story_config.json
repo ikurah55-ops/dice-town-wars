@@ -23,9 +23,17 @@
     {
       "afterStage": 12,
       "slots": 5
+    },
+    {
+      "afterStage": 20,
+      "slots": 6
+    },
+    {
+      "afterStage": 30,
+      "slots": 7
     }
   ],
-  "maxMagic": 2,
+  "maxMagic": 3,
   "playerBaseHp": 180,
   "hpUpgrade": {
     "amount": 10,

@@ -39,9 +39,10 @@ describe('データ', () => {
     expect(defaultData.bosses.length).toBeGreaterThan(0);
   });
   it('持ち込みの検証', () => {
-    expect(validateLoadout(data, ['orchard', 'mill', 'spoils', 'archers', 'catapult'])).toBeNull();
-    expect(validateLoadout(data, ['orchard', 'mill', 'spoils', 'archers'])).toMatch('5枚');
-    expect(validateLoadout(data, ['seal', 'thieves', 'tax', 'archers', 'mill'])).toMatch('魔法');
+    expect(validateLoadout(data, ['orchard', 'mill', 'spoils', 'archers', 'catapult', 'cannon', 'toll'])).toBeNull();
+    expect(validateLoadout(data, ['orchard', 'mill', 'spoils', 'archers', 'catapult'])).toMatch('7枚');
+    expect(validateLoadout(data, ['seal', 'thieves', 'tax', 'archers', 'mill', 'cannon', 'toll'])).toBeNull(); // 魔法3枚まで
+    expect(validateLoadout(data, ['seal', 'thieves', 'tax', 'ward', 'mill', 'cannon', 'toll'])).toMatch('魔法');
     expect(validateLoadout(data, ['orchard'])).not.toBeNull();
   });
 });
@@ -54,7 +55,8 @@ describe('初期状態', () => {
     expect(data.config.stock.facility).toBe(4);
     expect(p.stock.wheat).toBe(3);
     expect(p.stock.thieves).toBeUndefined();
-    expect(p.market).toHaveLength(8); // 基本3枚＋持ち込み5枚
+    expect(p.market).toHaveLength(8); // 基本3枚＋このテストの持ち込み5枚
+    expect(data.config.marketBaseCards.length + data.config.loadout.cards).toBe(10); // 最大10枚
     expect(data.config.marketBaseCards).not.toContain('catapult');
     expect(data.cards.catapult.base).toBeFalsy();
     expect(p.coins).toBe(3); // 初期2 + 基本収入1

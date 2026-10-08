@@ -130,12 +130,15 @@ describe('解放・レベル・HP・枠', () => {
     expect(costs).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     expect(playerMaxHp(cfg, s)).toBe(280);
   });
-  it('持ち込み枠は3 → ステージ5で4 → ステージ12で5（基本3枚と合わせて最大8枚）', () => {
+  it('持ち込み枠は3 → 5で4 → 12で5 → 20で6 → 30で7（基本3枚と合わせて最大10枚）', () => {
     const s = newSave(data, cfg, 1);
     expect(loadoutSlots(cfg, s)).toBe(3);
     expect(loadoutSlots(cfg, clearUpTo(s, 5))).toBe(4);
     expect(loadoutSlots(cfg, clearUpTo(s, 12))).toBe(5);
-    expect(loadoutSlots(cfg, clearUpTo(s, 50)) + data.config.marketBaseCards.length).toBe(8);
+    expect(loadoutSlots(cfg, clearUpTo(s, 20))).toBe(6);
+    expect(loadoutSlots(cfg, clearUpTo(s, 29))).toBe(6);
+    expect(loadoutSlots(cfg, clearUpTo(s, 30))).toBe(7);
+    expect(loadoutSlots(cfg, clearUpTo(s, 50)) + data.config.marketBaseCards.length).toBe(10);
     expect(validateStoryLoadout(data, cfg, s, ['orchard', 'archers'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, s, ['orchard', 'cannon'])).toMatch('解放');
     expect(validateStoryLoadout(data, cfg, s, ['orchard'])).toBeNull(); // 枠より少なくてもよい
@@ -144,7 +147,8 @@ describe('解放・レベル・HP・枠', () => {
     const late: StorySave = { ...clearUpTo(s, 20), unlocked: ['watchtower', 'mill', 'tax', 'seal', 'thieves'] };
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'catapult', 'watchtower', 'mill'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'catapult', 'tax', 'seal'])).toBeNull();
-    expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'tax', 'seal', 'thieves'])).toMatch('魔法');
+    expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'tax', 'seal', 'thieves'])).toBeNull(); // 魔法3枚まで
+    expect(validateStoryLoadout(data, cfg, { ...late, unlocked: [...late.unlocked, 'ward'] }, ['orchard', 'ward', 'tax', 'seal', 'thieves'])).toMatch('魔法');
     expect(generateStage(data, cfg, 16, null, {}).hp % 1).toBe(0); // HPは整数
   });
   it('プレイヤーのカードレベルと最大HPが戦闘データに入る', () => {

@@ -367,7 +367,7 @@ export function Battle({
               閉じる
             </button>
           </div>
-          <div className="market-grid">
+          <div className="market-grid" style={{ ['--cols' as string]: Math.ceil(cpu.market.length / 2) }}>
             {[...cpu.market]
               .sort((x, y) => cardCost(state, data.cards[x]) - cardCost(state, data.cards[y]))
               .map((id) => {
@@ -407,7 +407,7 @@ export function Battle({
               </button>
             )}
           </div>
-          <div className="market-grid">
+          <div className="market-grid" style={{ ['--cols' as string]: Math.ceil(me.market.length / 2) }}>
             {/* 左上からコストの低い順（同コストは市場の並び順のまま） */}
             {[...me.market].sort((x, y) => cardCost(state, data.cards[x]) - cardCost(state, data.cards[y])).map((id) => {
               const card = data.cards[id];

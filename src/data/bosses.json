@@ -9,7 +9,9 @@
     "loadout": [
       "orchard",
       "archers",
+      "spearmen",
       "catapult",
+      "mill",
       "watchtower",
       "thieves"
     ],

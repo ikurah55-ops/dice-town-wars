@@ -23,8 +23,8 @@
   "magicUses": 3,
   "magicCooldown": 2,
   "loadout": {
-    "cards": 5,
-    "maxMagic": 2
+    "cards": 7,
+    "maxMagic": 3
   },
   "coinToDamage": 3,
   "levelBonusPerLevel": 0.1,
