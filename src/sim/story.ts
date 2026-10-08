@@ -27,6 +27,7 @@ import {
   recordResult,
   stageFor,
   storyConfig as cfg,
+  storyMaxMagic,
   unlockableCards,
   unlockCard,
   type StorySave,
@@ -56,7 +57,7 @@ function chooseLoadout(save: StorySave): string[] {
   for (const c of cards) {
     if (out.length >= slots) break;
     if (c.category === 'magic') {
-      if (magic >= cfg.maxMagic) continue;
+      if (magic >= storyMaxMagic(cfg, save)) continue;
       magic++;
     }
     out.push(c.id);
@@ -113,6 +114,7 @@ function main() {
   const farmPerRun: number[] = [];
   const subHalf: number[] = [];
   const subFast: number[] = [];
+  const subCardN: number[] = [];
   const unusedExp: number[] = [];
   const checkpoints = [10, 20, 30, 40, 50];
   const atCp: Record<number, { unlocked: number[]; levels: number[]; hp: number[] }> = {};
@@ -138,7 +140,7 @@ function main() {
       battles++;
       const won = res.winner === 0;
       const before = highestCleared(save);
-      save = recordResult(cfg, save, s, { won, turns: res.turn, hpLeft: Math.max(0, res.players[0].hp), maxHp: res.players[0].maxHp }).save;
+      save = recordResult(cfg, save, s, { won, turns: res.turn, hpLeft: Math.max(0, res.players[0].hp), maxHp: res.players[0].maxHp, bought: Object.keys(res.players[0].bought), subCard: st.subCard }).save;
       save = spendExp(save);
       const after = highestCleared(save);
       if (after > before && checkpoints.includes(after)) {
@@ -167,6 +169,7 @@ function main() {
     farmPerRun.push(farm);
     subHalf.push(Object.values(save.subs).filter((x) => x.halfHp).length);
     subFast.push(Object.values(save.subs).filter((x) => x.fastWin).length);
+    subCardN.push(Object.values(save.subs).filter((x) => x.card).length);
     unusedExp.push(save.exp);
     if (allAt) unlockedAllAt.push(allAt);
   }
@@ -198,7 +201,7 @@ function main() {
     const big = firstTry[a + 9];
     console.log(`  ${String(a).padStart(2)}〜${String(a + 9).padStart(2)}  通常 ${pct(w / Math.max(1, t))}  大ボス(${a + 9}) ${pct(big.win / Math.max(1, big.total))}`);
   }
-  console.log(`\nサブミッション達成数（全${N}ステージ中）: HP半分以上 ${avg(subHalf).toFixed(1)}  10ターン以内 ${avg(subFast).toFixed(1)}`);
+  console.log(`\nサブミッション達成数（全${N}ステージ中）: HP半分以上 ${avg(subHalf).toFixed(1)}  10ターン以内 ${avg(subFast).toFixed(1)}  指定カード ${avg(subCardN).toFixed(1)}`);
   console.log(`全カードの解放が終わったステージ（平均） ${unlockedAllAt.length ? avg(unlockedAllAt).toFixed(1) : '未完了'}（${unlockedAllAt.length}/${runs}回）`);
   console.log(`全クリア時の未使用経験値（平均） ${avg(unusedExp).toFixed(1)}`);
   console.log('\n各時点（そのステージを初クリアした直後）:');

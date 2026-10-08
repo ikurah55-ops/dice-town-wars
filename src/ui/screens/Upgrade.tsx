@@ -36,8 +36,11 @@ export function Upgrade({ data, save, onChange, onBack }: { data: GameData; save
     }
   };
 
-  const UpCard = ({ card, cost, label, onBuy, extra }: { card: CardDef; cost: number | null; label: string; onBuy?: () => void; extra?: string }) => (
-    <div className={`up-card ${flash?.key === card.id ? 'just-upgraded' : ''}`}>
+  const UpCard = ({ card, cost, label, onBuy, extra, unlock }: { card: CardDef; cost: number | null; label: string; onBuy?: () => void; extra?: string; unlock?: boolean }) => (
+    <div
+      className={`up-card ${unlock ? 'up-unlock' : ''} ${flash?.key === card.id ? 'just-upgraded' : ''}`}
+      data-tut={unlock && card.category === 'magic' ? 'magic' : undefined}
+    >
       <CardView card={card} data={data} level={card.category !== 'magic' ? cardLevel(save, card.id) : undefined} badge={extra} />
       {cost === null ? (
         <div className="up-max">{label}</div>
@@ -79,13 +82,13 @@ export function Upgrade({ data, save, onChange, onBack }: { data: GameData; save
       </div>
 
       <div className="scroll build-cards">
-        <div className="section-label">解放できるカード</div>
+        <div className="section-label section-unlock">解放できるカード</div>
         {unlockable.length === 0 ? (
           <p className="hint up-empty">今は解放できるカードはありません。</p>
         ) : (
           <div className="card-grid">
             {unlockable.map((c) => (
-              <UpCard key={c.id} card={c} cost={c.story!.unlockExp} label="解放" onBuy={() => act(c.id, '解放！', () => unlockCard(data, save, c.id))} extra="NEW" />
+              <UpCard key={c.id} card={c} cost={c.story!.unlockExp} label="解放する" onBuy={() => act(c.id, '解放！', () => unlockCard(data, save, c.id))} extra="NEW" unlock />
             ))}
           </div>
         )}

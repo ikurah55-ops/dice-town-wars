@@ -2180,6 +2180,12 @@ button {
   font-size: 13px;
   font-weight: 700;
 }
+.tut-skip-low {
+  top: auto;
+  right: auto;
+  left: max(10px, env(safe-area-inset-left));
+  bottom: max(8px, env(safe-area-inset-bottom));
+}
 
 .env-announce {
   position: absolute;
@@ -2517,4 +2523,32 @@ button {
 .card .card-faces.many .mini-die {
   width: 11px;
   height: 11px;
+}
+
+.boss-name-line {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--atk);
+  margin-bottom: 6px;
+}
+
+/* 強化画面：解放できるカードは青緑の光で区別する */
+.section-unlock {
+  color: #7ae8d0;
+}
+.up-unlock > .card {
+  box-shadow: 0 0 0 3px #7ae8d0, 0 0 18px rgba(122, 232, 208, 0.55);
+}
+.up-unlock .card-top {
+  background: linear-gradient(180deg, #1e6a5c, #0f3a33);
+  border-bottom-color: #7ae8d0;
+}
+.up-unlock .card-badge {
+  background: #7ae8d0;
+  color: #0e3a32;
+}
+.up-unlock .up-buy {
+  background: linear-gradient(180deg, #8af0d8, #2a9a86);
+  color: #062a24;
+  box-shadow: 0 3px 0 #13584c;
 }

@@ -16,6 +16,7 @@ import {
   recordResult,
   stageFor,
   storyConfig as cfg,
+  storyMaxMagic,
   unlockableCards,
   unlockCard,
   validateStoryLoadout,
@@ -34,14 +35,18 @@ describe('ステージ生成', () => {
     const s10 = generateStage(data, cfg, 10, null, {});
     expect(s10.isBig).toBe(true);
     expect(s10.hp).toBe(Math.round((b.hpBase + b.hpPerStage * 9) * b.bigBossHpMult));
-    expect(s10.loadout).toHaveLength(2); // floor(14/8)=1、大ボス+1
+    expect(s10.loadout).toEqual(['watchtower', 'infirmary', 'ward']); // floor(14/8)=1、大ボス+1、ステージ8からは魔法も1枚
     expect(s10.startCoins).toBe(3);
     const s15 = generateStage(data, cfg, 15, null, {});
     expect(s15.cardLevel).toBe(2); // 1 + floor(14/14)
     expect(generateStage(data, cfg, 50, null, {}).cardLevel).toBe(4);
     const s12 = generateStage(data, cfg, 12, null, {});
     expect(s12.type).toBe('attack');
-    expect(s12.loadout).toEqual(['archers', 'cannon']);
+    expect(s12.loadout).toEqual(['archers', 'cannon', 'war_horn']);
+    expect(generateStage(data, cfg, 7, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(false); // 7までは魔法なし
+    expect(generateStage(data, cfg, 8, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(true); // 8から魔法
+    expect(s12.name).toBe(cfg.bossNames[11]);
+    expect(data.cards[s12.subCard].story!.unlockAfterStage).toBeLessThanOrEqual(11);
     expect(generateStage(data, cfg, 44, null, {}).loadout).toEqual(['archers', 'cannon', 'war_horn', 'mercenary']);
   });
   it('story_stages.json で上書きできる', () => {
@@ -49,7 +54,7 @@ describe('ステージ生成', () => {
     expect(st.hp).toBe(999);
     expect(st.envId).toBeNull();
     expect(st.type).toBe('defense');
-    expect(st.loadout).toEqual(['watchtower', 'infirmary']);
+    expect(st.loadout).toEqual(['watchtower', 'infirmary', 'ward']);
   });
   it('環境効果はステージ15以上の偶数だけ。セーブに固定され、同じシードなら同じ', () => {
     const a = newSave(data, cfg, 42);
@@ -77,7 +82,7 @@ describe('経験値', () => {
     expect(r.total).toBe(5);
     expect(r.firstClear).toBe(true);
     expect(r.save.cleared).toEqual([1]);
-    expect(r.save.subs[1]).toEqual({ halfHp: true, fastWin: true });
+    expect(r.save.subs[1]).toEqual({ halfHp: true, fastWin: true, card: false });
   });
   it('2回目以降はクリア2。サブミッションは各ステージ1回だけ、後から達成してももらえる', () => {
     const r1 = recordResult(cfg, base, 1, { won: true, turns: 14, hpLeft: 20, maxHp: 180 });
@@ -86,6 +91,14 @@ describe('経験値', () => {
     expect(r2.total).toBe(2 + 1); // クリア＋10ターン以内
     const r3 = recordResult(cfg, r2.save, 1, { won: true, turns: 9, hpLeft: 170, maxHp: 180 });
     expect(r3.total).toBe(2 + 1); // HP半分は初、10ターンは達成済み
+  });
+  it('指定カードを買って勝つと+1（各ステージ1回だけ）', () => {
+    const r = recordResult(cfg, base, 1, { won: true, turns: 14, hpLeft: 20, maxHp: 180, bought: ['catapult', 'wheat'], subCard: 'catapult' });
+    expect(r.total).toBe(3 + 1);
+    const r2 = recordResult(cfg, r.save, 1, { won: true, turns: 14, hpLeft: 20, maxHp: 180, bought: ['catapult'], subCard: 'catapult' });
+    expect(r2.total).toBe(2);
+    const r3 = recordResult(cfg, base, 1, { won: true, turns: 14, hpLeft: 20, maxHp: 180, bought: ['wheat'], subCard: 'catapult' });
+    expect(r3.total).toBe(3);
   });
   it('敗北は1', () => {
     const r = recordResult(cfg, base, 3, { won: false, turns: 12, hpLeft: 0, maxHp: 180 });
@@ -144,7 +157,10 @@ describe('解放・レベル・HP・枠', () => {
     expect(validateStoryLoadout(data, cfg, s, ['orchard'])).toBeNull(); // 枠より少なくてもよい
     expect(validateStoryLoadout(data, cfg, s, ['orchard', 'archers', 'catapult', 'watchtower'])).toMatch('3枚まで');
     // 魔法は枠の中で最大2枚。施設だけで埋めてもよい
-    const late: StorySave = { ...clearUpTo(s, 20), unlocked: ['watchtower', 'mill', 'tax', 'seal', 'thieves'] };
+    const late: StorySave = { ...clearUpTo(s, 30), unlocked: ['watchtower', 'mill', 'tax', 'seal', 'thieves'] };
+    // 魔法の上限は枠数で変わる：3枠0、4枠1、5枠1、6枠2、7枠3
+    expect([0, 5, 12, 20, 30].map((n) => storyMaxMagic(cfg, clearUpTo(s, n)))).toEqual([0, 1, 1, 2, 3]);
+    expect(validateStoryLoadout(data, cfg, { ...clearUpTo(s, 12), unlocked: ['tax', 'seal'] }, ['orchard', 'tax', 'seal'])).toMatch('1枚まで');
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'catapult', 'watchtower', 'mill'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'catapult', 'tax', 'seal'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'tax', 'seal', 'thieves'])).toBeNull(); // 魔法3枚まで

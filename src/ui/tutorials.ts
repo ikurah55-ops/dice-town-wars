@@ -10,6 +10,7 @@ export const TUT = {
   upgradeScreen: 'upgrade_screen',
   newCard: 'new_card',
   magic: 'magic_card',
+  magicBattle: 'magic_battle',
   envIntro: 'env_intro',
   env: (id: string) => `env_${id}`,
 } as const;
@@ -66,15 +67,23 @@ export function newCardSteps(): TutStep[] {
   ];
 }
 
-export function magicSteps(story: StoryConfig, cfg: GameConfig): TutStep[] {
+/** 強化画面で、魔法カードを初めて解放できるようになったとき */
+export function magicSteps(story: StoryConfig, cfg: GameConfig, maxNow: number): TutStep[] {
   return [
-    { title: '魔法カード', text: '魔法カード（紫）を解放できるようになりました！' },
-    { title: '魔法の使い方', text: `魔法は買ったその手番から効果が出て、${cfg.magicUses}回分続く使い切りのカードです。発動中の魔法は上下の帯に表示されます。` },
+    { title: '魔法カード', text: '魔法カード（紫）を解放できるようになりました！ここで経験値を払って解放しましょう。', target: '[data-tut="magic"]' },
+    { title: '魔法の使い方', text: `魔法は買ったその手番から効果が出て、${cfg.magicUses}回分続く使い切りのカードです。` },
     {
       title: '魔法のルール',
-      text: `持ち込めるのは${story.maxMagic}枚まで。同じ魔法は効果中に重ねて買えず、効果が切れた後も${cfg.magicCooldown}ターンは買い直せません。`,
-      target: '.upgrade-btn',
+      text: `今は持ち込みのうち魔法${maxNow}枚まで（持ち込み枠が増えると最大${story.maxMagic}枚）。同じ魔法は効果中に重ねて買えず、効果が切れた後も${cfg.magicCooldown}ターンは買い直せません。`,
     },
+  ];
+}
+
+/** 戦闘で初めて魔法カードが出てきたとき */
+export function magicBattleSteps(cfg: GameConfig): TutStep[] {
+  return [
+    { title: '魔法カード', text: `この戦闘には魔法カード（紫）があります。買ったその手番から効果が出て、${cfg.magicUses}回分続きます。相手も魔法を使ってきます。` },
+    { title: '発動中の魔法', text: '発動中の魔法は、上下の帯のこの場所に残り回数つきで表示されます。タップで内容を確認できます。', target: '.bar-enemy .magic-slots' },
   ];
 }
 

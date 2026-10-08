@@ -9,7 +9,7 @@ import { sfx } from '../audio';
 import { groupFx, playFx } from '../fx';
 import { getSettings, hasSeen, markSeen } from '../settings';
 import { EnvAnnounce, Tutorial, type TutStep } from '../Tutorial';
-import { battleBasicsSteps, battleBuySteps, envIntroSteps, TUT } from '../tutorials';
+import { battleBasicsSteps, battleBuySteps, envIntroSteps, magicBattleSteps, TUT } from '../tutorials';
 import { HowToPlay } from './Title';
 
 const ROLL_MS = 650;
@@ -32,6 +32,8 @@ export function Battle({
   onRetire,
   onOptions,
   tutorial = false,
+  storyMode = false,
+  subCard,
 }: {
   data: GameData;
   player: Combatant;
@@ -42,6 +44,8 @@ export function Battle({
   onRetire: () => void;
   onOptions: () => void;
   tutorial?: boolean; // ストーリーのステージ1：戦い方のチュートリアルを出す
+  storyMode?: boolean;
+  subCard?: string; // サブミッションの指定カード（市場で目印を付ける）
 }) {
   // 戦闘前に出すもの：環境効果の説明 → 環境効果の発表 → 戦い方のチュートリアル
   type Intro = { kind: 'tut'; id: string; steps: TutStep[] } | { kind: 'env'; env: EnvironmentDef; first: boolean; label?: string };
@@ -52,6 +56,9 @@ export function Battle({
       q.push({ kind: 'env', env: environment, first: !hasSeen(TUT.env(environment.id)) });
     }
     if (tutorial && !hasSeen(TUT.battleBasics)) q.push({ kind: 'tut', id: TUT.battleBasics, steps: battleBasicsSteps(data.config) });
+    // 初めて魔法カードが出てくる戦闘（ストーリー）
+    const hasMagic = [...player.loadout, ...cpuDef.loadout].some((id) => data.cards[id]?.category === 'magic');
+    if (storyMode && hasMagic && !hasSeen(TUT.magicBattle)) q.push({ kind: 'tut', id: TUT.magicBattle, steps: magicBattleSteps(data.config) });
     return q;
   });
   const [buyTut, setBuyTut] = useState(false);
@@ -434,7 +441,7 @@ export function Battle({
                   uses={magicUses(state, data)}
                   stock={me.stock[id]}
                   disabled={canBuy && !!err}
-                  badge={active ? `効果中 残${active.remaining}` : me.cooldowns[id] ? `再使用まで${me.cooldowns[id]}ターン` : owned > 0 ? `所持${owned}` : undefined}
+                  badge={active ? `効果中 残${active.remaining}` : me.cooldowns[id] ? `再使用まで${me.cooldowns[id]}ターン` : id === subCard && !me.bought[id] ? '★ 指定カード' : owned > 0 ? `所持${owned}` : undefined}
                   onClick={() => tryBuy(id)}
                 />
               );

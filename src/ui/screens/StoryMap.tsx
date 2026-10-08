@@ -157,6 +157,7 @@ export function StoryMap({
                   <span className="node-stars">
                     <i className={subs?.halfHp ? 'on' : ''}>★</i>
                     <i className={subs?.fastWin ? 'on' : ''}>★</i>
+                    <i className={subs?.card ? 'on' : ''}>★</i>
                   </span>
                 )}
               </button>
@@ -195,6 +196,7 @@ function StageInfo({ data, save, stage: st, onClose, onPlay }: { data: GameData;
       ) : (
         <div className="stage-info">
           <div className="stage-info-left">
+            <div className="boss-name-line">{st.name}</div>
             <dl className="stage-stats">
               <dt>ボスのHP</dt>
               <dd>{st.hp}</dd>
@@ -218,6 +220,9 @@ function StageInfo({ data, save, stage: st, onClose, onPlay }: { data: GameData;
               </li>
               <li className={subs?.fastWin ? 'done' : ''}>
                 {subs?.fastWin ? '✓' : '・'} {cfg.subMissions.fastWinTurns}ターン以内に勝利（+{cfg.exp.subFastWin}）
+              </li>
+              <li className={subs?.card ? 'done' : ''}>
+                {subs?.card ? '✓' : '・'} 「{data.cards[st.subCard].name}」を買って勝利（+{cfg.exp.subCard}）
               </li>
             </ul>
             <p className="hint">

@@ -12,6 +12,7 @@ import {
   stageFor,
   stageLabel,
   storyConfig as cfg,
+  storyMaxMagic,
   unlockableCards,
   validateStoryLoadout,
   type ExpGain,
@@ -103,7 +104,6 @@ export function App() {
     const unl = unlockableCards(data, save);
     if (highestCleared(save) >= 1 && !hasSeen(TUT.upgradeIntro)) mapTut = { id: TUT.upgradeIntro, steps: upgradeIntroSteps() };
     else if (unl.some((c) => c.category !== 'magic') && !hasSeen(TUT.newCard)) mapTut = { id: TUT.newCard, steps: newCardSteps() };
-    else if (unl.some((c) => c.category === 'magic') && !hasSeen(TUT.magic)) mapTut = { id: TUT.magic, steps: magicSteps(cfg, data.config) };
   }
 
   // 進行は変わるたびに端末へ保存
@@ -193,7 +193,7 @@ export function App() {
               vsLabel={stageLabel(st)}
               candidates={availableCards(data, save)}
               slots={loadoutSlots(cfg, save)}
-              maxMagic={cfg.maxMagic}
+              maxMagic={storyMaxMagic(cfg, save)}
               levels={levels}
               environment={st.envId ? data.environments[st.envId] : null}
               storageKey={STORY_BUILD_KEY}
@@ -215,6 +215,8 @@ export function App() {
               ai={screen.ai}
               environment={st.envId ? data.environments[st.envId] : null}
               tutorial={screen.stage === 1}
+              storyMode
+              subCard={st.subCard}
               onOptions={() => setOptions(true)}
               onRetire={() => storyBuild(screen.stage)}
               onFinish={(state) => {
@@ -224,6 +226,8 @@ export function App() {
                   turns: state.turn,
                   hpLeft: Math.max(0, state.players[0].hp),
                   maxHp: state.players[0].maxHp,
+                  bought: Object.keys(state.players[0].bought),
+                  subCard: st.subCard,
                 });
                 // 初クリアで新しく解放時期が来たカード・増えた枠
                 const newlyUnlockable = r.firstClear
@@ -264,6 +268,9 @@ export function App() {
       {screen.name === 'upgrade' && <Upgrade data={data} save={save} onChange={setSave} onBack={() => setScreen(screen.back)} />}
       {screen.name === 'upgrade' && !hasSeen(TUT.upgradeScreen) && (
         <Tutorial steps={upgradeScreenSteps(data.config, cfg)} onDone={() => doneTut(TUT.upgradeScreen)} />
+      )}
+      {screen.name === 'upgrade' && hasSeen(TUT.upgradeScreen) && !hasSeen(TUT.magic) && unlockableCards(data, save).some((c) => c.category === 'magic') && (
+        <Tutorial key="magic" steps={magicSteps(cfg, data.config, storyMaxMagic(cfg, save))} onDone={() => doneTut(TUT.magic)} />
       )}
 
       {options && (

@@ -67,7 +67,8 @@ export function Tutorial({ steps, onDone }: { steps: TutStep[]; onDone: () => vo
         </div>
       </div>
       <button
-        className="tut-skip"
+        // 照らす場所が右上（スキップの位置）なら、スキップは左下に置く
+        className={rect && rect.top < 60 && rect.left + rect.width > (document.querySelector('.app')?.clientWidth ?? 800) - 130 ? 'tut-skip tut-skip-low' : 'tut-skip'}
         onClick={(e) => {
           e.stopPropagation();
           onDone();

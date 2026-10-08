@@ -10,9 +10,9 @@ import type { BossType, CardDef, Combatant, GameData } from './types';
 
 export interface StoryConfig {
   stageCount: number;
-  exp: { firstClear: number; repeatClear: number; subHalfHp: number; subFastWin: number; loss: number };
+  exp: { firstClear: number; repeatClear: number; subHalfHp: number; subFastWin: number; subCard: number; loss: number };
   subMissions: { halfHpRatio: number; fastWinTurns: number };
-  slots: { afterStage: number; slots: number }[];
+  slots: { afterStage: number; slots: number; maxMagic: number }[];
   maxMagic: number;
   playerBaseHp: number;
   hpUpgrade: { amount: number; baseCost: number; costStep: number; maxCount: number };
@@ -31,9 +31,12 @@ export interface StoryConfig {
     startCoinsEvery: number;
     typeByRemainder: BossType[];
     dice: string;
+    magicFromStage: number; // このステージからボスが必ず魔法を1枚持ち込む
+    earlyMagic: Record<BossType, string>; // 型ごとの、最初に使う魔法
   };
   environment: { fromStage: number; evenStagesOnly: boolean };
   typeNames: Record<BossType, string>;
+  bossNames: string[]; // ステージごとのボスの名前（1始まりで並べる）
   simulation: { loadoutPriority: string[]; hpCostWeight: number };
 }
 
@@ -45,6 +48,8 @@ export interface StageOverride {
   environment?: string | null;
   dice?: string;
   startCoins?: number;
+  name?: string;
+  subCard?: string; // サブミッション「このカードを買って勝利」のカード
 }
 
 export const storyConfig = storyConfigJson as StoryConfig;
@@ -65,6 +70,8 @@ export interface StageDef {
   startCoins: number;
   dice: string;
   envId: string | null;
+  name: string; // ボスの名前
+  subCard: string; // サブミッション：このカードを戦闘中に1枚以上買って勝利
 }
 
 /** 型ごとの持ち込みリスト（bossOrder 順） */
@@ -108,6 +115,12 @@ export function generateStage(
   if (isBig) count = Math.min(b.maxCards, count + b.bigBossExtraCards);
   const o = overrides[String(s)] ?? {};
   const type = o.type ?? b.typeByRemainder[s % b.typeByRemainder.length];
+  let loadout = o.loadout ?? bossThemeList(data, type).slice(0, count);
+  // 魔法の解放と同じ時期から、ボスも魔法を1枚は持ち込む
+  if (!o.loadout && s >= b.magicFromStage && !loadout.some((id) => data.cards[id]?.category === 'magic')) {
+    const m = b.earlyMagic[type];
+    if (m && data.cards[m]) loadout = [...loadout, m];
+  }
   const stage: StageDef = {
     stage: s,
     type,
@@ -115,12 +128,20 @@ export function generateStage(
     isBig,
     hp: o.hp ?? hp,
     cardLevel: o.cardLevel ?? cardLevel,
-    loadout: o.loadout ?? bossThemeList(data, type).slice(0, count),
+    loadout,
     startCoins: o.startCoins ?? b.startCoinsBase + Math.floor(s / b.startCoinsEvery),
     dice: o.dice ?? b.dice,
     envId: o.environment !== undefined ? o.environment : envId,
+    name: o.name ?? cfg.bossNames[s - 1] ?? `${cfg.typeNames[type]}のボス`,
+    subCard: o.subCard ?? pickSubCard(data, s),
   };
   return stage;
+}
+
+/** サブミッション用のカードを選ぶ：そのステージまでに解放できるカードから、ステージごとに順番に */
+export function pickSubCard(data: GameData, s: number): string {
+  const pool = data.cardList.filter((c) => (c.story?.unlockAfterStage ?? 0) <= s - 1).map((c) => c.id);
+  return pool[(s * 7 + 3) % pool.length];
 }
 
 export function stageLabel(st: StageDef): string {
@@ -132,7 +153,7 @@ export function bossCombatant(data: GameData, st: StageDef): Combatant {
   const levels: Record<string, number> = {};
   for (const id of [...data.config.marketBaseCards, ...st.loadout]) levels[id] = st.cardLevel;
   return {
-    name: `${st.typeName}${st.isBig ? 'の大ボス' : 'のボス'}`,
+    name: st.name,
     maxHp: st.hp,
     dice: st.dice,
     loadout: st.loadout,
@@ -148,6 +169,7 @@ export const SAVE_VERSION = 1;
 export interface SubMissionState {
   halfHp: boolean;
   fastWin: boolean;
+  card?: boolean; // 指定カードを買って勝利
 }
 
 export interface StorySave {
@@ -219,6 +241,14 @@ export function isStageOpen(save: StorySave, s: number): boolean {
 
 export function isCleared(save: StorySave, s: number): boolean {
   return save.cleared.includes(s);
+}
+
+/** 今の持ち込み枠で持ち込める魔法の枚数 */
+export function storyMaxMagic(cfg: StoryConfig, save: StorySave): number {
+  const h = highestCleared(save);
+  let n = 0;
+  for (const sl of cfg.slots) if (h >= sl.afterStage) n = sl.maxMagic;
+  return Math.min(n, cfg.maxMagic);
 }
 
 export function loadoutSlots(cfg: StoryConfig, save: StorySave): number {
@@ -322,7 +352,8 @@ export function validateStoryLoadout(data: GameData, cfg: StoryConfig, save: Sto
   if (new Set(ids).size !== ids.length) return '同じカードは1枚までです';
   if (ids.some((id) => !data.cards[id] || !isUnlocked(data.cards[id], save))) return '解放していないカードがあります';
   const magic = ids.filter((id) => data.cards[id].category === 'magic').length;
-  if (magic > cfg.maxMagic) return `魔法は${cfg.maxMagic}枚までです`;
+  const maxMagic = storyMaxMagic(cfg, save);
+  if (magic > maxMagic) return maxMagic === 0 ? '今は魔法を持ち込めません' : `魔法は${maxMagic}枚までです`;
   return null;
 }
 
@@ -333,6 +364,8 @@ export interface BattleOutcome {
   turns: number;
   hpLeft: number;
   maxHp: number;
+  bought?: string[]; // 戦闘中に買ったカード
+  subCard?: string; // このステージの指定カード
 }
 
 export interface ExpGain {
@@ -349,7 +382,7 @@ export function recordResult(
 ): { save: StorySave; gains: ExpGain[]; total: number; firstClear: boolean } {
   const gains: ExpGain[] = [];
   const subs = { ...save.subs };
-  const prev = subs[stage] ?? { halfHp: false, fastWin: false };
+  const prev = subs[stage] ?? { halfHp: false, fastWin: false, card: false };
   const next = { ...prev };
   let cleared = save.cleared;
   let firstClear = false;
@@ -366,6 +399,10 @@ export function recordResult(
     if (!prev.fastWin && o.turns <= cfg.subMissions.fastWinTurns) {
       next.fastWin = true;
       gains.push({ label: `★ ${cfg.subMissions.fastWinTurns}ターン以内に勝利`, exp: cfg.exp.subFastWin });
+    }
+    if (!prev.card && o.subCard && o.bought?.includes(o.subCard)) {
+      next.card = true;
+      gains.push({ label: '★ 指定カードを買って勝利', exp: cfg.exp.subCard });
     }
     subs[stage] = next;
   } else {
