@@ -1,16 +1,17 @@
 // 戦闘ルール本体。UIに依存しない状態機械。
 // applyAction は state を直接書き換える（UI側は structuredClone してから渡す）。
 
-import { countOwned, levelOf, scaleAmount } from './cards';
+import { countOwned, levelMul } from './cards';
+import { envBaseIncome, envBattleStart, envCost, envFaceWeight, envFacility, envLongBattleTurn, envMagicUses } from './env';
 import { nextRandom } from './rng';
 import type {
   Action,
   ActiveMagic,
-  BattleModifiers,
   BattleState,
   CardDef,
   Combatant,
   Effect,
+  EnvironmentDef,
   Fx,
   GameData,
   LogEntry,
@@ -20,7 +21,7 @@ import type {
 
 // ---------- 生成 ----------
 
-function createPlayer(data: GameData, c: Combatant): PlayerState {
+function createPlayer(data: GameData, c: Combatant, env: EnvironmentDef | null): PlayerState {
   const { config } = data;
   const market = [...config.marketBaseCards, ...c.loadout];
   const stock: Record<string, number> = {};
@@ -31,7 +32,8 @@ function createPlayer(data: GameData, c: Combatant): PlayerState {
     name: c.name,
     hp: c.maxHp,
     maxHp: c.maxHp,
-    coins: config.startCoins,
+    coins: c.startCoins ?? config.startCoins,
+    coinFrac: 0,
     dice: c.dice,
     market,
     stock,
@@ -41,12 +43,13 @@ function createPlayer(data: GameData, c: Combatant): PlayerState {
     bought: {},
     cooldowns: {},
   };
+  envBattleStart(env, p); // 環境効果フック：戦闘開始時
   return p;
 }
 
 export interface CreateBattleOptions {
   seed: number;
-  modifiers?: BattleModifiers;
+  environment?: EnvironmentDef | null;
   quiet?: boolean;
 }
 
@@ -60,7 +63,7 @@ export function createBattle(
     turn: 1,
     active: 0,
     phase: 'roll',
-    players: [createPlayer(data, player), createPlayer(data, cpu)],
+    players: [createPlayer(data, player, opts.environment ?? null), createPlayer(data, cpu, opts.environment ?? null)],
     rngState: opts.seed | 0,
     lastRoll: null,
     rerollUsed: false,
@@ -68,7 +71,7 @@ export function createBattle(
     pendingDestroy: null,
     winner: null,
     longBattleHappened: false,
-    modifiers: opts.modifiers ?? {},
+    environment: opts.environment ?? null,
     log: [],
     quiet: !!opts.quiet,
     nextUid: 1,
@@ -82,6 +85,7 @@ export function createBattle(
     }
   }
   log(state, null, '戦闘開始！', 'system');
+  if (state.environment) log(state, null, `環境効果：${state.environment.name}（${state.environment.description}）`, 'system');
   beginTurn(state, data);
   return state;
 }
@@ -132,6 +136,25 @@ function consume(p: PlayerState, m: ActiveMagic, data: GameData) {
 function damage(state: BattleState, target: Side, amount: number) {
   if (amount <= 0) return;
   state.players[target].hp -= amount;
+}
+
+/** コインを得る（小数は端数として持ち越す）。実際に増えた枚数を返す */
+function gainCoins(p: PlayerState, amount: number): number {
+  p.coinFrac += amount;
+  const whole = Math.floor(p.coinFrac + 1e-9);
+  p.coins += whole;
+  p.coinFrac -= whole;
+  return whole;
+}
+
+/** カードのコスト（環境効果込み） */
+export function cardCost(state: BattleState, card: CardDef): number {
+  return envCost(state.environment, card);
+}
+
+/** 魔法の効果回数（環境効果込み） */
+export function magicUses(state: BattleState, data: GameData): number {
+  return envMagicUses(state.environment, data.config.magicUses);
 }
 
 function stealText(card: string, from: string, n: number): string {
@@ -199,7 +222,7 @@ function beginTurn(state: BattleState, data: GameData) {
   state.builtThisTurn = [];
 
   // ラウンド開始時の長期戦ダメージ
-  if (side === 0 && state.turn > data.config.longBattle.afterTurn) {
+  if (side === 0 && state.turn > envLongBattleTurn(state, data.config.longBattle.afterTurn)) {
     state.longBattleHappened = true;
     const dmgs = state.players.map((p) => Math.floor(p.maxHp * data.config.longBattle.damageRatio)) as [number, number];
     for (const s of [0, 1] as Side[]) {
@@ -216,7 +239,7 @@ function beginTurn(state: BattleState, data: GameData) {
     if (card.timing !== 'turn_start') continue;
     let usedHere = false;
     for (const e of card.effects) {
-      const amount = 'amount' in e ? scaleAmount(e.amount, levelOf(me, card.id)) : 0;
+      const amount = 'amount' in e ? e.amount : 0; // 魔法はレベルなし
       if (e.type === 'heal') {
         const h = heal(me, amount);
         log(state, side, `${card.name}：HPを${h}回復`, 'heal', { kind: 'heal', side, amount: h, card: card.id });
@@ -255,10 +278,11 @@ function continueStartAfterHeal(state: BattleState, data: GameData) {
 function gainIncome(state: BattleState, data: GameData) {
   const side = state.active;
   const me = state.players[side];
-  let income = data.config.baseIncome + (data.dice[me.dice].modifiers?.incomeBonus ?? 0);
+  // 環境効果フック：基本収入
+  let income = envBaseIncome(state, data.config.baseIncome + (data.dice[me.dice].modifiers?.incomeBonus ?? 0));
   let bonusCard: string | null = null;
   for (const { m, e, card } of magicsWith(me, data, 'income_bonus')) {
-    income += scaleAmount((e as { amount: number }).amount, levelOf(me, card.id));
+    income += (e as { amount: number }).amount;
     bonusCard = card.id;
     consume(me, m, data);
   }
@@ -289,9 +313,20 @@ export function effectiveFaces(state: BattleState, data: GameData, side: Side): 
   return ok.length > 0 ? ok : faces;
 }
 
+/** 面ごとの重み（環境効果フック）。出ない目を除いた残りの面に重みをかける */
+export function faceWeights(state: BattleState, data: GameData, side: Side): { face: number; weight: number }[] {
+  return effectiveFaces(state, data, side).map((face) => ({ face, weight: envFaceWeight(state, face) }));
+}
+
 function rollDie(state: BattleState, data: GameData): number {
-  const faces = effectiveFaces(state, data, state.active);
-  return faces[Math.floor(rand(state) * faces.length)];
+  const ws = faceWeights(state, data, state.active);
+  const total = ws.reduce((t, w) => t + w.weight, 0);
+  let r = rand(state) * total;
+  for (const w of ws) {
+    if (r < w.weight) return w.face;
+    r -= w.weight;
+  }
+  return ws[ws.length - 1].face;
 }
 
 export function canReroll(state: BattleState, data: GameData): boolean {
@@ -316,14 +351,12 @@ function resolveRoll(state: BattleState, data: GameData) {
   const me = state.players[side];
   const them = state.players[other];
   const face = state.lastRoll!;
-  const mods = state.modifiers;
-  const faceMult = mods.faceMultiplier?.[face] ?? 1;
 
   // 倍率を読み取る
   let econMult = 1;
   let atkMult = 1;
-  for (const { e, card } of magicsWith(me, data, 'economy_multiplier')) econMult *= scaleAmount((e as { amount: number }).amount, levelOf(me, card.id));
-  for (const { e, card } of magicsWith(me, data, 'attack_multiplier')) atkMult *= scaleAmount((e as { amount: number }).amount, levelOf(me, card.id));
+  for (const { e } of magicsWith(me, data, 'economy_multiplier')) econMult *= (e as { amount: number }).amount;
+  for (const { e } of magicsWith(me, data, 'attack_multiplier')) atkMult *= (e as { amount: number }).amount;
 
   // サイコロ系の魔法の残り回数を減らす（自分の own_roll、相手の opp_roll）
   for (const m of [...me.magics]) if (data.cards[m.cardId].timing === 'own_roll') consume(me, m, data);
@@ -334,7 +367,10 @@ function resolveRoll(state: BattleState, data: GameData) {
     const card = data.cards[f.cardId];
     if (card.category !== 'counter' || !card.faces?.includes(face)) continue;
     for (const e of card.effects) {
-      const amount = 'amount' in e ? scaleAmount(e.amount, levelOf(them, card.id)) : 0;
+      // レベル補正 → 環境効果フック → 四捨五入
+      const raw = 'amount' in e ? e.amount * levelMul(data, them, card) : 0;
+      const kind = e.type === 'reduce_damage' ? 'shield' : e.type === 'heal' ? 'heal' : e.type === 'steal_coins' ? 'steal' : 'counter_damage';
+      const amount = Math.round(envFacility(state, raw, { card, face, kind }));
       switch (e.type) {
         case 'reduce_damage':
           state.damageShield += amount;
@@ -365,23 +401,23 @@ function resolveRoll(state: BattleState, data: GameData) {
     const card = data.cards[f.cardId];
     if (!card.faces?.includes(face)) continue;
     if (card.category === 'economy') {
-      let coins = 0;
+      let base = 0;
       for (const e of card.effects) {
-        const lv = levelOf(me, card.id);
-        if (e.type === 'gain_coins') coins += scaleAmount(e.amount, lv);
-        else if (e.type === 'gain_coins_per') coins += scaleAmount(e.amount, lv) * countOwned(me, data, e.per);
+        if (e.type === 'gain_coins') base += e.amount;
+        else if (e.type === 'gain_coins_per') base += e.amount * countOwned(me, data, e.per);
         else if (e.type === 'gain_coins_growing') {
-          coins += scaleAmount(e.amount, lv) + f.growth;
+          base += e.amount + f.growth; // 果樹園：毎回の獲得量に倍率をかける（成長の+1は変えない）
           f.growth += e.step;
         }
       }
-      coins = Math.floor((coins + (mods.economyBonus ?? 0)) * econMult * faceMult);
-      me.coins += coins;
+      // レベル補正 → 環境効果フック → 収穫祭。端数は持ち越す
+      const raw = envFacility(state, base * levelMul(data, me, card), { card, face, kind: 'coin' }) * econMult;
+      const coins = gainCoins(me, raw);
       log(state, side, `${card.name}：+${coins}コイン`, 'coin', { kind: 'coin', side, amount: coins, card: card.id });
     } else if (card.category === 'attack') {
       for (const e of card.effects) {
         if (e.type !== 'deal_damage') continue;
-        const dmg = Math.floor((scaleAmount(e.amount, levelOf(me, card.id)) + (mods.attackBonus ?? 0)) * atkMult * faceMult);
+        const dmg = Math.round(envFacility(state, e.amount * levelMul(data, me, card), { card, face, kind: 'damage' }) * atkMult);
         attackTotal += dmg;
         log(state, side, `${card.name}：${dmg}ダメージ`, 'damage', { kind: 'attack', side, amount: dmg, card: card.id });
       }
@@ -408,7 +444,7 @@ export function buyError(state: BattleState, data: GameData, side: Side, cardId:
   const card = data.cards[cardId];
   if (!card || !p.market.includes(cardId)) return '市場にないカード';
   if ((p.stock[cardId] ?? 0) <= 0) return '在庫切れ';
-  if (p.coins < card.cost) return 'コイン不足';
+  if (p.coins < cardCost(state, card)) return 'コイン不足';
   if (card.category === 'magic' && findMagic(p, cardId)) return '効果中';
   if (card.category === 'magic' && (p.cooldowns[cardId] ?? 0) > 0) return '再使用待ち';
   return null;
@@ -424,7 +460,7 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
   const needsFace = card.effects.some((e) => e.type === 'ban_face');
   if (needsFace && (face === undefined || face < 1 || face > 6)) throw new Error('目の指定が必要です');
 
-  me.coins -= card.cost;
+  me.coins -= cardCost(state, card);
   me.stock[cardId]--;
   me.bought[cardId] = (me.bought[cardId] ?? 0) + 1;
   log(state, side, `${card.name}を購入`, 'buy');
@@ -435,14 +471,14 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
     return;
   }
 
-  const m: ActiveMagic = { cardId, remaining: data.config.magicUses, face: needsFace ? face : undefined };
+  const m: ActiveMagic = { cardId, remaining: magicUses(state, data), face: needsFace ? face : undefined };
   me.magics.push(m);
   if (needsFace) log(state, side, `${card.name}：${face}の目を指定`, 'magic');
 
   if (card.timing === 'turn_start') {
     // 購入した瞬間に1回目
     for (const e of card.effects) {
-      const amount = 'amount' in e ? scaleAmount(e.amount, levelOf(me, card.id)) : 0;
+      const amount = 'amount' in e ? e.amount : 0; // 魔法はレベルなし
       if (e.type === 'heal') {
         const h = heal(me, amount);
         log(state, side, `${card.name}：HPを${h}回復`, 'heal', { kind: 'heal', side, amount: h, card: card.id });
@@ -506,7 +542,7 @@ function endTurn(state: BattleState, data: GameData) {
     for (const e of card.effects) {
       if (e.type === 'spend_all_for_damage') {
         const coins = me.coins;
-        const dmg = coins * scaleAmount(e.amount, levelOf(me, card.id));
+        const dmg = coins * e.amount;
         me.coins = 0;
         damage(state, opp(side), dmg);
         log(state, side, `${card.name}：${coins}コイン払って${dmg}ダメージ`, 'damage', { kind: 'merc', side, target: opp(side), coins, amount: dmg, card: card.id });

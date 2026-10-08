@@ -26,5 +26,7 @@
     "cards": 5,
     "maxMagic": 2
   },
-  "coinToDamage": 3
+  "coinToDamage": 3,
+  "levelBonusPerLevel": 0.1,
+  "maxCardLevel": 5
 }

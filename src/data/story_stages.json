@@ -1,0 +1,6 @@
+{
+  "40": {
+    "hp": 335
+  },
+  "_説明": "ステージ番号をキーにして、計算式で作ったステージの値を上書きできる（hp, cardLevel, loadout, type, environment, dice, startCoins）。environment に null を書くと環境効果なし。例: \"12\": { \"hp\": 130, \"environment\": \"walls\" }"
+}

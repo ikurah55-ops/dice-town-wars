@@ -29,6 +29,18 @@ export interface CardDef {
   base?: boolean; // 基本カード（毎戦市場に並ぶ）
   timing?: MagicTiming; // 魔法のみ
   effects: Effect[];
+  story?: CardStoryDef; // ストーリーモードでの解放・強化
+}
+
+export type BossType = 'attack' | 'economy' | 'defense' | 'disrupt';
+
+export interface CardStoryDef {
+  unlockAfterStage: number; // このステージをクリアした後に解放できる（0なら最初から解放済み）
+  unlockExp: number;
+  levelable: boolean;
+  levelCost: number[]; // Lv2〜Lv5への必要経験値
+  bossTheme: BossType | null; // ボスが使う型
+  bossOrder?: number; // 型ごとの持ち込みリストでの順番（1始まり）
 }
 
 export interface DiceDef {
@@ -72,6 +84,8 @@ export interface GameConfig {
   magicCooldown: number; // 魔法の効果が切れた後、同じ魔法を買い直せない手番数
   loadout: { cards: number; maxMagic: number };
   coinToDamage: number;
+  levelBonusPerLevel: number; // 1レベルごとの効果量の増加（0.1 = 10%）
+  maxCardLevel: number;
 }
 
 export interface GameData {
@@ -80,16 +94,35 @@ export interface GameData {
   dice: Record<string, DiceDef>;
   bosses: BossDef[];
   config: GameConfig;
+  environments: Record<string, EnvironmentDef>;
+  environmentList: EnvironmentDef[];
+}
+
+// ===== 環境効果 =====
+
+/** 環境効果の中身。type ごとの処理は core/env.ts のフックで実装する */
+export type EnvEffect =
+  | { type: 'econ_bonus_per_card'; amount: number } // 経済カード1枚が発動するたびに+n
+  | { type: 'attack_multiplier'; amount: number } // 攻撃カードのダメージ倍率
+  | { type: 'base_income_set'; amount: number } // 基本収入をこの値にする
+  | { type: 'base_income_delta'; amount: number } // 基本収入に加算
+  | { type: 'face_multiplier'; faces: number[]; amount: number } // その出目で発動した施設のコイン・ダメージ倍率
+  | { type: 'face_weight'; faces: number[]; amount: number } // その面が出やすくなる重み
+  | { type: 'cost_delta'; amount: number } // 全カードのコストに加算
+  | { type: 'counter_multiplier'; amount: number } // カウンターカードの効果倍率
+  | { type: 'magic_uses'; amount: number } // 魔法の効果回数
+  | { type: 'long_battle_turn'; amount: number } // 長期戦ダメージが始まるターン（このターンを超えたら）
+  | { type: 'start_coins_delta'; amount: number } // 初期コインに加算
+  | { type: 'start_hp_delta'; amount: number }; // 最大HPに加算
+
+export interface EnvironmentDef {
+  id: string;
+  name: string;
+  description: string;
+  effects: EnvEffect[];
 }
 
 // ===== 拡張用の入口 =====
-
-/** 戦闘全体に掛かる補正（将来の環境効果） */
-export interface BattleModifiers {
-  economyBonus?: number; // 経済カードの獲得量に加算
-  attackBonus?: number; // 攻撃カードのダメージに加算
-  faceMultiplier?: Record<number, number>; // 出目ごとの効果倍率
-}
 
 /** プレイヤーの永続データ（将来の成長要素） */
 export interface PlayerProfile {
@@ -103,6 +136,7 @@ export interface Combatant {
   dice: string;
   loadout: string[];
   cardLevels?: Record<string, number>;
+  startCoins?: number; // 省略時は config.startCoins
 }
 
 // ===== 戦闘の状態 =====
@@ -126,6 +160,8 @@ export interface PlayerState {
   hp: number;
   maxHp: number;
   coins: number;
+  /** コインの端数（レベル補正で小数になった分を持ち越す） */
+  coinFrac: number;
   dice: string;
   market: string[]; // 市場に並ぶカードID（8枚）
   stock: Record<string, number>;
@@ -162,7 +198,7 @@ export interface BattleState {
   pendingDestroy: PendingDestroy | null;
   winner: Side | null;
   longBattleHappened: boolean;
-  modifiers: BattleModifiers;
+  environment: EnvironmentDef | null;
   log: LogEntry[];
   /** true のときログを記録しない（シミュレーション高速化） */
   quiet: boolean;

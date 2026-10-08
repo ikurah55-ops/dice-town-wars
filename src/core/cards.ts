@@ -1,9 +1,14 @@
 import type { CardDef, Effect, GameData, PlayerState } from './types';
 
-/** カードレベルによる効果量の補正（将来の成長要素用。今はLv1=そのまま） */
-export function scaleAmount(amount: number, level: number): number {
-  if (level <= 1) return amount;
-  return Math.round(amount * (1 + 0.2 * (level - 1)));
+/** カードレベルによる効果量の倍率（Lv1=1.0、1レベルごとに +step） */
+export function levelFactor(level: number, step: number): number {
+  return 1 + step * (Math.max(1, level) - 1);
+}
+
+/** そのプレイヤーが持つカードの効果量倍率。魔法カードはレベルなし */
+export function levelMul(data: GameData, p: PlayerState, card: CardDef): number {
+  if (card.category === 'magic') return 1;
+  return levelFactor(levelOf(p, card.id), data.config.levelBonusPerLevel);
 }
 
 export function levelOf(p: PlayerState, cardId: string): number {
@@ -32,7 +37,10 @@ function perLabel(per: string, data: GameData): string {
 
 /** 効果の説明文（数値はデータから生成） */
 export function describeEffect(e: Effect, data: GameData, level = 1): string {
-  const a = 'amount' in e ? scaleAmount(e.amount, level) : 0;
+  const raw = 'amount' in e ? e.amount * levelFactor(level, data.config.levelBonusPerLevel) : 0;
+  // コインは小数1桁まで（端数は持ち越されるため）、それ以外は四捨五入
+  const coinLike = e.type === 'gain_coins' || e.type === 'gain_coins_per' || e.type === 'gain_coins_growing';
+  const a = coinLike ? Math.round(raw * 10) / 10 : Math.round(raw);
   switch (e.type) {
     case 'gain_coins':
       return `${a}コイン`;

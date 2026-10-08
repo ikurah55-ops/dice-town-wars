@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
     "test": "vitest run",
-    "sim": "tsx src/sim/simulate.ts"
+    "sim": "tsx src/sim/simulate.ts",
+    "sim:story": "tsx src/sim/story.ts"
   },
   "dependencies": {
     "react": "^19.3.0",

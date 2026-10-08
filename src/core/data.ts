@@ -2,7 +2,8 @@ import cardsJson from '../data/cards.json';
 import diceJson from '../data/dice.json';
 import bossesJson from '../data/bosses.json';
 import configJson from '../data/config.json';
-import type { BossDef, CardDef, DiceDef, GameConfig, GameData } from './types';
+import environmentsJson from '../data/environments.json';
+import type { BossDef, CardDef, DiceDef, EnvironmentDef, GameConfig, GameData } from './types';
 
 /** 任意のJSONからゲームデータを組み立てる（シミュレーションで差し替え可能） */
 export function buildGameData(
@@ -10,6 +11,7 @@ export function buildGameData(
   dice: DiceDef[],
   bosses: BossDef[],
   config: GameConfig,
+  environments: EnvironmentDef[] = environmentsJson as EnvironmentDef[],
 ): GameData {
   const cardMap: Record<string, CardDef> = {};
   for (const c of cards) cardMap[c.id] = c;
@@ -25,7 +27,9 @@ export function buildGameData(
   for (const id of [...config.marketBaseCards, ...config.startingCards]) {
     if (!cardMap[id]) throw new Error(`設定のカード ${id} が存在しません`);
   }
-  return { cards: cardMap, cardList: cards, dice: diceMap, bosses, config };
+  const envMap: Record<string, EnvironmentDef> = {};
+  for (const e of environments) envMap[e.id] = e;
+  return { cards: cardMap, cardList: cards, dice: diceMap, bosses, config, environments: envMap, environmentList: environments };
 }
 
 export const defaultData: GameData = buildGameData(

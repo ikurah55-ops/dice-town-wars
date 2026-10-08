@@ -60,6 +60,8 @@ function main() {
   const seed = Number(args.seed ?? 1);
   const data = loadData(args);
   const rand = createRng(seed);
+  const env = args.env ? data.environments[args.env] : null;
+  if (args.env && !env) throw new Error(`環境効果 ${args.env} がありません（${Object.keys(data.environments).join(', ')}）`);
   const hp = data.config.playerMaxHp;
 
   const turns: number[] = [];
@@ -73,7 +75,7 @@ function main() {
   for (let g = 0; g < games; g++) {
     const a: Combatant = { name: 'A', maxHp: hp, dice: 'normal', loadout: randomLoadout(data, rand) };
     const b: Combatant = { name: 'B', maxHp: hp, dice: 'normal', loadout: randomLoadout(data, rand) };
-    const s = runAutoBattle(data, a, b, [DEFAULT_AI, DEFAULT_AI], Math.floor(rand() * 2 ** 31), rand);
+    const s = runAutoBattle(data, a, b, [DEFAULT_AI, DEFAULT_AI], Math.floor(rand() * 2 ** 31), rand, { environment: env });
     turns.push(s.turn);
     if (s.longBattleHappened) longBattle++;
     if (s.winner === 0) firstWins++;
@@ -97,7 +99,7 @@ function main() {
   const dist: Record<number, number> = {};
   for (const t of turns) dist[t] = (dist[t] ?? 0) + 1;
 
-  console.log(`\n=== シミュレーション結果（${games}戦, seed=${seed}, ${sec.toFixed(1)}秒） ===`);
+  console.log(`\n=== シミュレーション結果（${games}戦, seed=${seed}, ${sec.toFixed(1)}秒${env ? `, 環境効果=${env.name}` : ''}） ===`);
   console.log(`決着ターン 平均 ${avg.toFixed(2)} / 中央値 ${median}`);
   console.log('分布:');
   const maxCount = Math.max(...Object.values(dist));

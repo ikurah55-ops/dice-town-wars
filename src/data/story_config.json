@@ -1,0 +1,96 @@
+{
+  "stageCount": 50,
+  "exp": {
+    "firstClear": 3,
+    "repeatClear": 2,
+    "subHalfHp": 1,
+    "subFastWin": 1,
+    "loss": 1
+  },
+  "subMissions": {
+    "halfHpRatio": 0.5,
+    "fastWinTurns": 10
+  },
+  "slots": [
+    {
+      "afterStage": 0,
+      "slots": 2
+    },
+    {
+      "afterStage": 5,
+      "slots": 3
+    },
+    {
+      "afterStage": 12,
+      "slots": 4
+    }
+  ],
+  "maxMagic": 2,
+  "playerBaseHp": 180,
+  "hpUpgrade": {
+    "amount": 10,
+    "baseCost": 3,
+    "costStep": 1,
+    "maxCount": 10
+  },
+  "boss": {
+    "hpBase": 95,
+    "hpPerStage": 4.5,
+    "bigBossEvery": 10,
+    "bigBossHpMult": 1.1,
+    "levelEvery": 14,
+    "maxLevel": 5,
+    "cardsOffset": 4,
+    "cardsDivisor": 8,
+    "maxCards": 4,
+    "bigBossExtraCards": 1,
+    "startCoinsBase": 2,
+    "startCoinsEvery": 10,
+    "typeByRemainder": [
+      "attack",
+      "economy",
+      "defense",
+      "disrupt"
+    ],
+    "dice": "normal"
+  },
+  "environment": {
+    "fromStage": 15,
+    "evenStagesOnly": true
+  },
+  "typeNames": {
+    "attack": "攻撃型",
+    "economy": "経済型",
+    "defense": "守備型",
+    "disrupt": "妨害型"
+  },
+  "simulation": {
+    "loadoutPriority": [
+      "mercenary",
+      "war_horn",
+      "holy_spring",
+      "silence",
+      "battering_ram",
+      "cannon",
+      "knights",
+      "catapult",
+      "archers",
+      "spearmen",
+      "mill",
+      "watchtower",
+      "castle_wall",
+      "goddess",
+      "harvest",
+      "infirmary",
+      "palisade",
+      "toll",
+      "tax",
+      "counter_battery",
+      "seal",
+      "thieves",
+      "orchard",
+      "spoils"
+    ],
+    "hpCostWeight": 1.4
+  }
+}

@@ -1,6 +1,7 @@
 // CPUの思考。「残りターンを考慮した価値（コイン換算）÷コスト」が高いカードから買う。
 
-import { countOwned, levelOf, scaleAmount } from './cards';
+import { countOwned, levelFactor, levelOf } from './cards';
+import { envCost } from './env';
 import { buyError, canReroll, destroyTargets, effectiveFaces, opp } from './rules';
 import type { Action, AiWeights, BattleState, CardDef, GameData, PlayerState, Side } from './types';
 
@@ -34,22 +35,22 @@ function faceProb(faces: number[], targetFaces: number[] | undefined): number {
 /** カード1枚が1回発動したときのコイン（経済） */
 function econYield(p: PlayerState, data: GameData, card: CardDef, extraWheat = 0, extraAttack = 0): number {
   let coins = 0;
-  const lv = levelOf(p, card.id);
+  const lv = levelFactor(levelOf(p, card.id), data.config.levelBonusPerLevel);
   for (const e of card.effects) {
-    if (e.type === 'gain_coins') coins += scaleAmount(e.amount, lv);
+    if (e.type === 'gain_coins') coins += e.amount * lv;
     else if (e.type === 'gain_coins_per') {
       let n = countOwned(p, data, e.per);
       if (e.per === 'category:attack') n += extraAttack;
       else n += extraWheat;
-      coins += scaleAmount(e.amount, lv) * Math.max(n, 1);
-    } else if (e.type === 'gain_coins_growing') coins += scaleAmount(e.amount, lv) + 1.5;
+      coins += e.amount * lv * Math.max(n, 1);
+    } else if (e.type === 'gain_coins_growing') coins += (e.amount + 1.5) * lv;
   }
   return coins;
 }
 
-function attackYield(p: PlayerState, card: CardDef): number {
+function attackYield(p: PlayerState, card: CardDef, data: GameData): number {
   let d = 0;
-  for (const e of card.effects) if (e.type === 'deal_damage') d += scaleAmount(e.amount, levelOf(p, card.id));
+  for (const e of card.effects) if (e.type === 'deal_damage') d += e.amount * levelFactor(levelOf(p, card.id), data.config.levelBonusPerLevel);
   return d;
 }
 
@@ -70,7 +71,7 @@ export function faceValue(state: BattleState, data: GameData, side: Side, face: 
         else if (e.type === 'gain_coins_growing') coins += e.amount + f.growth;
       }
       v += coins;
-    } else if (c.category === 'attack') v += attackYield(me, c) / k;
+    } else if (c.category === 'attack') v += attackYield(me, c, data) / k;
   }
   for (const f of them.facilities) {
     const c = data.cards[f.cardId];
@@ -111,7 +112,7 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
       return ev * Math.max(0, R - 2) * w.economy;
     }
     case 'attack': {
-      let ev = (faceProb(myFaces, card.faces) * attackYield(me, card)) / k;
+      let ev = (faceProb(myFaces, card.faces) * attackYield(me, card, data)) / k;
       const spoils = data.cards.spoils;
       if (spoils) ev += countOwned(me, data, 'spoils') * faceProb(myFaces, spoils.faces);
       return ev * R * w.attack;
@@ -134,7 +135,7 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
       const n = Math.min(uses, R + 1);
       let v = 0;
       for (const e of card.effects) {
-        const a = 'amount' in e ? scaleAmount(e.amount, levelOf(me, card.id)) : 0;
+        const a = 'amount' in e ? e.amount : 0; // 魔法はレベルなし
         switch (e.type) {
           case 'heal':
             v += Math.min(a * n, me.maxHp - me.hp + a) / k;
@@ -158,7 +159,7 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
             let dmg = 0;
             for (const f of me.facilities) {
               const c = data.cards[f.cardId];
-              if (c.category === 'attack') dmg += faceProb(myFaces, c.faces) * attackYield(me, c);
+              if (c.category === 'attack') dmg += faceProb(myFaces, c.faces) * attackYield(me, c, data);
             }
             v += ((dmg * (a - 1)) / k) * n;
             break;
@@ -259,7 +260,7 @@ function chooseBuy(state: BattleState, data: GameData, ai: AiProfile, rand: () =
     if (err && err !== 'コイン不足') continue;
     const value = cardValue(state, data, side, card, ai.weights);
     const noise = 1 + ai.randomness * (rand() * 2 - 1);
-    const score = (value / Math.max(1, card.cost)) * noise;
+    const score = (value / Math.max(1, envCost(state.environment, card))) * noise;
     if (score < 1) continue;
     cands.push({ card, score, affordable: !err });
   }
@@ -269,7 +270,7 @@ function chooseBuy(state: BattleState, data: GameData, ai: AiProfile, rand: () =
   const bestAff = cands.find((c) => c.affordable);
   // 高価値カードのために貯金するか
   if (!bestAll.affordable) {
-    const shortfall = bestAll.card.cost - me.coins;
+    const shortfall = envCost(state.environment, bestAll.card) - me.coins;
     if (shortfall <= 4 && (!bestAff || bestAll.score > bestAff.score * 1.3)) return { type: 'end_turn' };
   }
   if (!bestAff) return { type: 'end_turn' };
