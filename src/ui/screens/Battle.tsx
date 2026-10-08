@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { chooseAction, type AiProfile } from '../../core/ai';
 import { describeCard } from '../../core/cards';
-import { applyAction, buyError, cardCost, createBattle, destroyTargets, magicUses } from '../../core/rules';
+import { applyAction, buyError, cardCost, coinTotal, createBattle, destroyTargets, fmtCoins, magicUses } from '../../core/rules';
 import type { Action, BattleState, Combatant, EnvironmentDef, Fx, GameData, PlayerState, Side } from '../../core/types';
 import { CardView, Die, MiniDie, Modal } from '../components';
 import { envLongBattleTurn } from '../../core/env';
@@ -170,7 +170,7 @@ export function Battle({
     if (fxs.length > 0 && fxRef.current && stageRef.current) {
       const v: View = {
         hp: [prev.players[0].hp, prev.players[1].hp],
-        coins: [prev.players[0].coins, prev.players[1].coins],
+        coins: [prev.players[0].coins + prev.players[0].coinFrac, prev.players[1].coins + prev.players[1].coinFrac], // 端数込み
       };
       setView({ ...v });
       const ctx = { root: fxRef.current, stage: stageRef.current, data, face: next.lastRoll ?? 0 };
@@ -246,7 +246,11 @@ export function Battle({
   const canBuy = myTurn && state.phase === 'buy';
   const afterTurn = envLongBattleTurn(state, data.config.longBattle.afterTurn);
 
-  const shown = (p: PlayerState, side: Side): PlayerState => (view ? { ...p, hp: view.hp[side], coins: view.coins[side] } : p);
+  const shown = (p: PlayerState, side: Side): PlayerState => {
+    if (!view) return p;
+    const whole = Math.floor(view.coins[side] + 1e-9);
+    return { ...p, hp: view.hp[side], coins: whole, coinFrac: view.coins[side] - whole };
+  };
 
   const tryBuy = (id: string) => {
     if (!canBuy) {
@@ -379,7 +383,7 @@ export function Battle({
         <div className="market market-enemy">
           <div className="market-head">
             <span className="market-title">{cpu.name}のデッキ</span>
-            <span className="coins-big">🪙 {cpu.coins}</span>
+            <span className="coins-big">🪙 {coinTotal(cpu).toFixed(1)}</span>
             <button className="btn btn-small btn-ghost" onClick={() => setEnemyDeck(false)}>
               閉じる
             </button>
@@ -414,7 +418,7 @@ export function Battle({
         <div className="market">
           <div className="market-head">
             <span className="market-title">{canBuy ? '購入フェーズ' : 'デッキ（市場）'}</span>
-            <span className="coins-big">🪙 {me.coins}</span>
+            <span className="coins-big">🪙 {coinTotal(me).toFixed(1)}</span>
             <button className="btn btn-small btn-ghost" onClick={() => setMarketOpen(false)}>
               盤面を見る
             </button>
@@ -546,7 +550,7 @@ function countCards(ids: string[]): [string, number][] {
 function applyFxToView(v: View, fx: Fx) {
   switch (fx.kind) {
     case 'coin':
-      v.coins[fx.side] += fx.amount;
+      v.coins[fx.side] += fx.raw ?? fx.amount;
       break;
     case 'hit':
     case 'zap':
@@ -579,7 +583,7 @@ function useDelta(n: number) {
   const prev = useRef(n);
   const [delta, setDelta] = useState<{ v: number; k: number } | null>(null);
   useEffect(() => {
-    const d = n - prev.current;
+    const d = Math.round((n - prev.current) * 10) / 10;
     prev.current = n;
     if (d !== 0) setDelta({ v: d, k: Date.now() });
   }, [n]);
@@ -588,7 +592,8 @@ function useDelta(n: number) {
 
 function StatusLine({ p, side, data, onMagic, onName }: { p: PlayerState; side: Side; data: GameData; onMagic: (id: string) => void; onName?: () => void }) {
   const ratio = Math.max(0, p.hp) / p.maxHp;
-  const coinDelta = useDelta(p.coins);
+  const coinNow = coinTotal(p);
+  const coinDelta = useDelta(coinNow);
   return (
     <>
       {onName ? (
@@ -605,11 +610,11 @@ function StatusLine({ p, side, data, onMagic, onName }: { p: PlayerState; side: 
       <span className="hp-text">
         HP {Math.max(0, p.hp)}/{p.maxHp}
       </span>
-      <span className="coin-badge" data-coin={side} aria-label={`コイン${p.coins}`}>
-        {p.coins}
+      <span className="coin-badge" data-coin={side} aria-label={`コイン${coinNow.toFixed(1)}`}>
+        {coinNow.toFixed(1)}
         {coinDelta && (
           <span key={coinDelta.k} className={`float coin-float ${coinDelta.v < 0 ? 'neg' : 'pos'}`}>
-            {coinDelta.v > 0 ? `+${coinDelta.v}` : coinDelta.v}
+            {coinDelta.v > 0 ? `+${fmtCoins(coinDelta.v)}` : `-${fmtCoins(-coinDelta.v)}`}
           </span>
         )}
       </span>

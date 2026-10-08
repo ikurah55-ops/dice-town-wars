@@ -215,9 +215,13 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
             v += best * 0.8 * Math.min(n, targets.length);
             break;
           }
-          case 'spend_all_for_damage':
-            v += ((data.config.baseIncome + 1.5) * a * n) / k;
+          case 'spend_all_for_damage': {
+            // 買った手番の残りコイン＋以降の手番で余る分。とどめを刺せるなら大きく評価
+            const left = Math.max(0, me.coins - card.cost);
+            if (left * a >= them.hp) v += 50;
+            v += ((left + (n - 1) * (data.config.baseIncome + 2)) * a) / k;
             break;
+          }
           case 'restrict_faces': {
             // 出る目を絞ったときの期待値の伸び
             const before = expectedRollValue(state, data, side, myFaces);
@@ -301,6 +305,8 @@ function chooseBuy(state: BattleState, data: GameData, ai: AiProfile, rand: () =
   if (ai.skipChance && rand() < ai.skipChance) return { type: 'end_turn' };
   const side = state.active;
   const me = state.players[side];
+  const merc = me.magics.map((m) => data.cards[m.cardId].effects.find((e) => e.type === 'spend_all_for_damage')).find(Boolean) as { amount: number } | undefined;
+  if (merc && me.coins * merc.amount >= state.players[opp(side)].hp) return { type: 'end_turn' };
   type Cand = { card: CardDef; score: number; affordable: boolean };
   const cands: Cand[] = [];
   for (const id of me.market) {

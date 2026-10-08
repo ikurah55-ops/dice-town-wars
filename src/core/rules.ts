@@ -139,6 +139,17 @@ function damage(state: BattleState, target: Side, amount: number) {
   state.players[target].hp -= amount;
 }
 
+/** 所持コイン（端数込み）を小数第一位まで（切り捨て） */
+export function coinTotal(p: PlayerState): number {
+  return Math.floor((p.coins + p.coinFrac) * 10 + 1e-6) / 10;
+}
+
+/** コインの量を小数第一位までの文字列に（整数なら .0 を付けない） */
+export function fmtCoins(n: number): string {
+  const v = Math.floor(n * 10 + 1e-6) / 10;
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
 /** コインを得る（小数は端数として持ち越す）。実際に増えた枚数を返す */
 function gainCoins(p: PlayerState, amount: number): number {
   p.coinFrac += amount;
@@ -421,7 +432,7 @@ function resolveRoll(state: BattleState, data: GameData) {
       // レベル補正 → 環境効果フック → 収穫祭。端数は持ち越す
       const raw = envFacility(state, base * levelMul(data, me, card), { card, face, kind: 'coin' }) * econMult;
       const coins = gainCoins(me, raw);
-      log(state, side, `${card.name}：+${coins}コイン`, 'coin', { kind: 'coin', side, amount: coins, card: card.id });
+      log(state, side, `${card.name}：+${fmtCoins(raw)}コイン`, 'coin', { kind: 'coin', side, amount: coins, raw, card: card.id });
     } else if (card.category === 'attack') {
       for (const e of card.effects) {
         if (e.type !== 'deal_damage') continue;

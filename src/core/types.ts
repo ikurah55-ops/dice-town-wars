@@ -217,7 +217,7 @@ export interface BattleState {
 
 /** 演出用の構造化イベント（UIがエフェクトを出すのに使う。ロジックには影響しない） */
 export type Fx =
-  | { kind: 'coin'; side: Side; amount: number; card: string } // 経済カードの獲得
+  | { kind: 'coin'; side: Side; amount: number; raw?: number; card: string } // 経済カードの獲得（raw は端数込み）
   | { kind: 'attack'; side: Side; amount: number; card: string } // 攻撃カード1枚分（軽減前）
   | { kind: 'hit'; target: Side; amount: number; blocked: number } // 攻撃の合計が命中
   | { kind: 'shield'; side: Side; amount: number; card: string } // 見張り塔など

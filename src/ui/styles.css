@@ -665,9 +665,10 @@ button {
 .coin-badge {
   position: relative;
   flex: none;
-  width: 28px;
+  min-width: 28px;
   height: 28px;
-  border-radius: 50%;
+  padding: 0 6px;
+  border-radius: 14px;
   background: radial-gradient(circle at 35% 35%, #ffe08a, var(--gold-dark));
   color: #3a2205;
   font-weight: 900;
