@@ -653,7 +653,7 @@ function Zone({ data, state, side, onCard }: { data: GameData; state: BattleStat
   const roll = state.lastRoll;
   const chips: { key: string; id: string; n: number; run: [number, number] }[] = [];
   for (const [id, n] of counts) {
-    for (const run of faceRuns(data.cards[id].faces ?? [])) chips.push({ key: `${id}-${run[0]}`, id, n, run });
+    for (const run of faceRuns(data.cards[id].faces ?? [])) chips.push({ key: `${id}-${run[0]}-${n}`, id, n, run }); // 枚数が変わったら作り直す（破壊の演出で消えた札を残さない）
   }
   chips.sort((a, b) => a.run[0] - b.run[0] || b.run[1] - b.run[0] - (a.run[1] - a.run[0]));
   return (
