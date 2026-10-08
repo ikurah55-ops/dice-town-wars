@@ -2404,3 +2404,15 @@ button {
 .market-enemy .market-title {
   color: #ffb4a8;
 }
+
+/* 持ち込み枚数と魔法の上限は2行で表示 */
+.build-status {
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.4;
+}
+.build-status span:last-child {
+  font-size: 12px;
+  color: var(--paper2);
+}

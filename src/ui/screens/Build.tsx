@@ -123,8 +123,9 @@ export function Build({
           <span>
             持ち込み {picked.length}/{slots}
           </span>
+          {/* 魔法は持ち込み枠の中で最大 maxMagic 枚（別枠ではない） */}
           <span className={magicCount > maxMagic ? 'warn' : ''}>
-            魔法 {magicCount}/{maxMagic}
+            うち魔法 {magicCount}（{maxMagic}枚まで）
           </span>
         </div>
         <button className="btn btn-primary btn-start" disabled={!!error} onClick={start}>

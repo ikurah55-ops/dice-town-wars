@@ -14,15 +14,15 @@
   "slots": [
     {
       "afterStage": 0,
-      "slots": 2
-    },
-    {
-      "afterStage": 5,
       "slots": 3
     },
     {
-      "afterStage": 12,
+      "afterStage": 5,
       "slots": 4
+    },
+    {
+      "afterStage": 12,
+      "slots": 5
     }
   ],
   "maxMagic": 2,
@@ -34,10 +34,10 @@
     "maxCount": 10
   },
   "boss": {
-    "hpBase": 95,
-    "hpPerStage": 4.5,
+    "hpBase": 92,
+    "hpPerStage": 3.8,
     "bigBossEvery": 10,
-    "bigBossHpMult": 1.1,
+    "bigBossHpMult": 1.05,
     "levelEvery": 14,
     "maxLevel": 5,
     "cardsOffset": 4,
