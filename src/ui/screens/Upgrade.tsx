@@ -111,8 +111,9 @@ export function Upgrade({ data, save, onChange, onBack }: { data: GameData; save
             <div className="section-label">まだ解放できないカード</div>
             <div className="card-grid">
               {locked.map((c) => (
-                <div key={c.id} className="card-locked">
-                  <CardView card={c} data={data} disabled badge={`🔒 ステージ${c.story!.unlockAfterStage}クリア後`} />
+                <div key={c.id} className="up-card card-locked">
+                  <CardView card={c} data={data} disabled />
+                  <div className="up-max">🔒 ステージ{c.story!.unlockAfterStage}クリア後</div>
                 </div>
               ))}
             </div>

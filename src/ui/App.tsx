@@ -6,7 +6,6 @@ import {
   bossCombatant,
   cardLevel,
   highestCleared,
-  isUnlocked,
   loadoutSlots,
   playerCombatant,
   recordResult,
@@ -193,12 +192,6 @@ export function App() {
               data={data}
               vsLabel={stageLabel(st)}
               candidates={availableCards(data, save)}
-              locked={data.cardList
-                .filter((c) => !c.base && !isUnlocked(c, save))
-                .map((c) => ({
-                  card: c,
-                  note: highestCleared(save) >= c.story!.unlockAfterStage ? '強化画面で解放' : `ステージ${c.story!.unlockAfterStage}クリア後`,
-                }))}
               slots={loadoutSlots(cfg, save)}
               maxMagic={cfg.maxMagic}
               levels={levels}

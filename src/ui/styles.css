@@ -2376,3 +2376,9 @@ button {
     animation: none;
   }
 }
+
+/* カードの幅をそろえる（ボタンはそのままだと中身の幅に縮むため） */
+.up-card > .card,
+.card-locked > .card {
+  width: 100%;
+}
