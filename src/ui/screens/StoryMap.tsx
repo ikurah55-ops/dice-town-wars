@@ -18,6 +18,9 @@ import mapLayout from '../../data/map_layout.json';
 
 const HEAD = 50; // 上の帯の高さ（絵はこの下に収める）
 const PER_PAGE = 10; // 1ページ（1地方）のステージ数
+const EDGE_X = 34; // 端のマスと画面の端との最小の間隔
+const EDGE_TOP = 34;
+const EDGE_BOTTOM = 48; // 下は型名と星の分
 
 // src/assets/map/region1〜5.(jpg|png|webp) を置くと、その地方の背景が絵になる（無ければ仮の景色）
 const REGION_IMAGES: Record<string, string> = Object.fromEntries(
@@ -46,12 +49,22 @@ function layoutPage(k: number, N: number, w: number, h: number): Page {
   const lay = PAINTED[`region${k + 1}`];
   const areaH = h - HEAD;
   if (img && lay && typeof lay !== 'string' && lay.nodes.length >= count) {
-    let iw = w;
-    let ih = iw / lay.aspect;
-    if (ih > areaH) {
-      ih = areaH;
-      iw = ih * lay.aspect;
-    }
+    // 余白が出ないよう画面いっぱいまで大きくする。ただし端のマスが画面からはみ出ない大きさまで
+    const nodes = lay.nodes.slice(0, count);
+    const nxMin = Math.min(...nodes.map((n) => n[0]));
+    const nxMax = Math.max(...nodes.map((n) => n[0]));
+    const nyMin = Math.min(...nodes.map((n) => n[1]));
+    const nyMax = Math.max(...nodes.map((n) => n[1]));
+    const fits = (iw: number) => {
+      const ih = iw / lay.aspect;
+      const x = (w - iw) / 2;
+      const y = HEAD + (areaH - ih) / 2;
+      return x + nxMin * iw >= EDGE_X && x + nxMax * iw <= w - EDGE_X && y + nyMin * ih >= HEAD + EDGE_TOP && y + nyMax * ih <= h - EDGE_BOTTOM;
+    };
+    const contain = Math.min(w, areaH * lay.aspect);
+    let iw = Math.max(w, areaH * lay.aspect); // 画面いっぱい（はみ出す分は切れる）
+    while (iw > contain && !fits(iw)) iw = Math.max(contain, iw * 0.98);
+    const ih = iw / lay.aspect;
     const rect = { x: (w - iw) / 2, y: HEAD + (areaH - ih) / 2, w: iw, h: ih };
     return { k, first, img, rect, points: lay.nodes.slice(0, count).map(([nx, ny]) => ({ x: rect.x + nx * iw, y: rect.y + ny * ih })) };
   }
@@ -132,6 +145,34 @@ export function StoryMap({
                 <>
                   {/* 絵の外側には同じ絵をぼかして敷く */}
                   <img className="map-page-bg" src={pg.img} alt="" draggable={false} />
+                  {/* 余白は、絵の端を鏡写しにして続きの景色のように埋める */}
+                  {[
+                    ['left', -1, 0],
+                    ['right', 1, 0],
+                    ['top', 0, -1],
+                    ['bottom', 0, 1],
+                  ].map(([key, dx, dy]) => {
+                    const r = pg.rect!;
+                    const gapX = dx === -1 ? r.x : dx === 1 ? size.w - (r.x + r.w) : 0;
+                    const gapY = dy === -1 ? r.y : dy === 1 ? size.h - (r.y + r.h) : 0;
+                    if (gapX <= 0.5 && gapY <= 0.5) return null;
+                    return (
+                      <img
+                        key={key as string}
+                        className="map-page-img map-page-mirror"
+                        src={pg.img}
+                        alt=""
+                        draggable={false}
+                        style={{
+                          left: r.x + (dx as number) * r.w,
+                          top: r.y + (dy as number) * r.h,
+                          width: r.w,
+                          height: r.h,
+                          transform: dx ? 'scaleX(-1)' : 'scaleY(-1)',
+                        }}
+                      />
+                    );
+                  })}
                   <img className="map-page-img" src={pg.img} alt="" draggable={false} style={{ left: pg.rect.x, top: pg.rect.y, width: pg.rect.w, height: pg.rect.h }} />
                 </>
               ) : (

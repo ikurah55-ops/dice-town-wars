@@ -1938,6 +1938,14 @@ button {
   scroll-snap-stop: always;
   background: #1a120c;
 }
+/* ページの左右の端に薄い影（めくっている途中の境目をやわらげる） */
+.map-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 14px 0 18px -10px rgba(0, 0, 0, 0.55), inset -14px 0 18px -10px rgba(0, 0, 0, 0.55);
+}
 .map-page-bg {
   position: absolute;
   inset: -30px;
@@ -1949,7 +1957,7 @@ button {
 .map-page-img {
   position: absolute;
   display: block;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+  max-width: none;
 }
 .map-page-scenery {
   position: absolute;
