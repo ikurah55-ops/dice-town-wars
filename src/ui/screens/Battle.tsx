@@ -79,6 +79,7 @@ export function Battle({
     createBattle(data, player, cpuDef, { seed: Math.floor(Math.random() * 2 ** 31), environment }),
   );
   const [envOpen, setEnvOpen] = useState(false);
+  const [enemyDeck, setEnemyDeck] = useState(false); // 相手のデッキ（市場）を見る
   const [rolling, setRolling] = useState(false);
   const [busy, setBusy] = useState(false); // 出目の演出中は操作を止める
   const [bigDie, setBigDie] = useState<{ face: number; enemy: boolean } | null>(null);
@@ -274,7 +275,7 @@ export function Battle({
             {state.environment.name}
           </button>
         )}
-        <StatusLine p={shown(cpu, 1)} side={1} data={data} onMagic={setCardDetail} />
+        <StatusLine p={shown(cpu, 1)} side={1} data={data} onMagic={setCardDetail} onName={() => setEnemyDeck(true)} />
         <button className="btn-icon" onClick={() => setMenu(true)} aria-label="オプション">
           ☰
         </button>
@@ -353,6 +354,41 @@ export function Battle({
                 <CardView card={data.cards[id]} data={data} badge={n > 1 ? `×${n}` : undefined} />
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {enemyDeck && (
+        <div className="market market-enemy">
+          <div className="market-head">
+            <span className="market-title">{cpu.name}のデッキ</span>
+            <span className="coins-big">🪙 {cpu.coins}</span>
+            <button className="btn btn-small btn-ghost" onClick={() => setEnemyDeck(false)}>
+              閉じる
+            </button>
+          </div>
+          <div className="market-grid">
+            {[...cpu.market]
+              .sort((x, y) => cardCost(state, data.cards[x]) - cardCost(state, data.cards[y]))
+              .map((id) => {
+                const card = data.cards[id];
+                const active = cpu.magics.find((m) => m.cardId === id);
+                const owned = cpu.facilities.filter((f) => f.cardId === id).length;
+                const cd = cpu.cooldowns[id];
+                return (
+                  <CardView
+                    key={id}
+                    card={card}
+                    data={data}
+                    level={cpu.cardLevels[id]}
+                    cost={cardCost(state, card)}
+                    uses={magicUses(state, data)}
+                    stock={cpu.stock[id]}
+                    badge={active ? `効果中 残${active.remaining}` : cd ? `再使用まで${cd}ターン` : owned > 0 ? `所持${owned}` : undefined}
+                    onClick={() => setCardDetail(id)}
+                  />
+                );
+              })}
           </div>
         </div>
       )}
@@ -533,12 +569,19 @@ function useDelta(n: number) {
   return delta;
 }
 
-function StatusLine({ p, side, data, onMagic }: { p: PlayerState; side: Side; data: GameData; onMagic: (id: string) => void }) {
+function StatusLine({ p, side, data, onMagic, onName }: { p: PlayerState; side: Side; data: GameData; onMagic: (id: string) => void; onName?: () => void }) {
   const ratio = Math.max(0, p.hp) / p.maxHp;
   const coinDelta = useDelta(p.coins);
   return (
     <>
-      <span className="bar-name">{p.name}</span>
+      {onName ? (
+        <button className="bar-name bar-name-btn" onClick={onName} aria-label={`${p.name}のデッキを見る`}>
+          {p.name}
+          <span className="bar-name-hint">▼</span>
+        </button>
+      ) : (
+        <span className="bar-name">{p.name}</span>
+      )}
       <div className="hp-bar" data-hp={side}>
         <div className={`hp-fill ${ratio < 0.3 ? 'low' : ''}`} style={{ width: `${ratio * 100}%` }} />
       </div>

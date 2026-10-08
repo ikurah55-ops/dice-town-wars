@@ -2382,3 +2382,25 @@ button {
 .card-locked > .card {
   width: 100%;
 }
+
+/* 相手の名前（押すとデッキを表示） */
+.bar-name-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  margin-left: -4px;
+  border-radius: 8px;
+  background: rgba(182, 55, 42, 0.18);
+  border: 1px solid rgba(255, 180, 168, 0.4);
+}
+.bar-name-hint {
+  font-size: 9px;
+  opacity: 0.8;
+}
+.market-enemy {
+  background: rgba(36, 12, 10, 0.97);
+}
+.market-enemy .market-title {
+  color: #ffb4a8;
+}
