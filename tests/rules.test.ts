@@ -131,6 +131,27 @@ describe('カウンター', () => {
     expect(s.players[0].coins).toBe(0);
     expect(s.players[1].coins).toBe(2 + 3);
   });
+  it('関所：相手のコインが足りなければ端数まで奪う', () => {
+    const s = setup('fixed1', 'fixed6');
+    give(s, 1, 'toll');
+    s.players[0].facilities = [];
+    s.players[0].coins = 1; // 1枚＋端数0.6 = 1.6コイン（関所は2枚奪う）
+    s.players[0].coinFrac = 0.6;
+    s.players[1].coinFrac = 0.5;
+    applyAction(s, data, { type: 'roll' });
+    expect(s.players[0].coins + s.players[0].coinFrac).toBeCloseTo(0);
+    expect(s.players[1].coins + s.players[1].coinFrac).toBeCloseTo(2 + 0.5 + 1.6);
+  });
+  it('関所：足りていれば端数は残る', () => {
+    const s = setup('fixed1', 'fixed6');
+    give(s, 1, 'toll');
+    s.players[0].facilities = [];
+    s.players[0].coins = 4;
+    s.players[0].coinFrac = 0.6;
+    applyAction(s, data, { type: 'roll' });
+    expect(s.players[0].coins).toBe(4 - 2);
+    expect(s.players[0].coinFrac).toBeCloseTo(0.6);
+  });
   it('反撃砲台で自分が倒れることもある', () => {
     const s = setup('fixed6', 'fixed1');
     give(s, 1, 'counter_battery');
@@ -190,6 +211,16 @@ describe('魔法', () => {
     applyAction(s, data, { type: 'buy', cardId: 'thieves' });
     expect(s.players[0].coins).toBe(3);
     expect(s.players[1].coins).toBe(2);
+  });
+  it('盗賊団：相手のコインが足りなければ端数まで奪う', () => {
+    const s = setup('fixed6', 'fixed6', magicLoadout);
+    applyAction(s, data, { type: 'roll' });
+    s.players[0].coins = data.cards.thieves.cost;
+    s.players[1].coins = 1;
+    s.players[1].coinFrac = 0.7;
+    applyAction(s, data, { type: 'buy', cardId: 'thieves' });
+    expect(s.players[0].coins + s.players[0].coinFrac).toBeCloseTo(1.7);
+    expect(s.players[1].coins + s.players[1].coinFrac).toBeCloseTo(0);
   });
   it('封印の札：指定した目は出ない', () => {
     const s = setup('normal', 'fixed6', ['seal', 'orchard', 'mill', 'archers']);

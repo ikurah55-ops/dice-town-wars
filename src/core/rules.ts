@@ -178,10 +178,14 @@ function heal(p: PlayerState, amount: number): number {
   return p.hp - before;
 }
 
+/** コインを奪う。相手の所持（端数込み）が奪う枚数より少なければ、端数まで全部奪う */
 function steal(from: PlayerState, to: PlayerState, amount: number): number {
-  const n = Math.max(0, Math.min(amount, from.coins));
-  from.coins -= n;
-  to.coins += n;
+  const total = from.coins + from.coinFrac;
+  const n = Math.round(Math.max(0, Math.min(amount, total)) * 1e6) / 1e6;
+  const rest = Math.max(0, total - n);
+  from.coins = Math.floor(rest + 1e-9);
+  from.coinFrac = Math.max(0, rest - from.coins);
+  gainCoins(to, n);
   return n;
 }
 

@@ -31,6 +31,23 @@ export function applyVolumes() {
   bgmGain.gain.setTargetAtTime(s.bgmVolume * 0.35, ctx.currentTime, 0.1);
 }
 
+// 他のタブ・アプリに切り替えている間は音を止める（戻ったら再開）
+let pausedByHide = false;
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!ctx) return;
+    if (document.hidden) {
+      if (ctx.state === 'running') {
+        pausedByHide = true;
+        void ctx.suspend();
+      }
+    } else if (pausedByHide) {
+      pausedByHide = false;
+      void ctx.resume();
+    }
+  });
+}
+
 /** 最初のタップで音を使えるようにする */
 export function unlockAudio() {
   const c = ensure();
