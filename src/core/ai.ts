@@ -2,12 +2,38 @@
 
 import { countOwned, levelFactor, levelOf } from './cards';
 import { envCost } from './env';
-import { buyError, canReroll, destroyTargets, effectiveFaces, opp } from './rules';
+import { applyAction, buyError, canReroll, destroyTargets, effectiveFaces, opp } from './rules';
+import { createRng } from './rng';
 import type { Action, AiWeights, BattleState, CardDef, GameData, PlayerState, Side } from './types';
 
 export interface AiProfile {
   weights: AiWeights;
   randomness: number; // 0〜1。評価値に掛かる揺らぎ
+  skipChance?: number; // 買える場面でも買わずに手番を終える確率（弱いAI用）
+  saveRatio?: number; // 高価なカードのために貯金する判断の閾値（既定1.3）
+  rollouts?: number; // 0より大きければ、購入の候補ごとに試し打ちして一番勝てる手を選ぶ（強いAI用）
+}
+
+export interface AiLevelDef {
+  name: string;
+  randomness: number;
+  skipChance: number;
+  saveRatio: number;
+  rollouts?: number;
+  weightScale: AiWeights;
+}
+
+/** AIの強さ（ai_levels.json）を、ボスごとの重みに掛け合わせたプロファイルにする */
+export function applyAiLevel(base: AiProfile, level: AiLevelDef): AiProfile {
+  const w = base.weights;
+  const k = level.weightScale;
+  return {
+    weights: { economy: w.economy * k.economy, attack: w.attack * k.attack, counter: w.counter * k.counter, magic: w.magic * k.magic },
+    randomness: level.randomness,
+    skipChance: level.skipChance,
+    saveRatio: level.saveRatio,
+    rollouts: level.rollouts ?? 0,
+  };
 }
 
 export const DEFAULT_AI: AiProfile = {
@@ -217,6 +243,7 @@ export function bestFaceToBan(state: BattleState, data: GameData, side: Side, ta
 
 /** 現在の局面でCPUが取る行動を1つ返す */
 export function chooseAction(state: BattleState, data: GameData, ai: AiProfile, rand: () => number): Action {
+  if (state.phase === 'buy' && ai.rollouts && ai.rollouts > 0) return chooseBuyByRollout(state, data, ai, rand);
   const side = state.active;
   switch (state.phase) {
     case 'roll':
@@ -250,6 +277,7 @@ export function chooseAction(state: BattleState, data: GameData, ai: AiProfile, 
 }
 
 function chooseBuy(state: BattleState, data: GameData, ai: AiProfile, rand: () => number): Action {
+  if (ai.skipChance && rand() < ai.skipChance) return { type: 'end_turn' };
   const side = state.active;
   const me = state.players[side];
   type Cand = { card: CardDef; score: number; affordable: boolean };
@@ -271,11 +299,59 @@ function chooseBuy(state: BattleState, data: GameData, ai: AiProfile, rand: () =
   // 高価値カードのために貯金するか
   if (!bestAll.affordable) {
     const shortfall = envCost(state.environment, bestAll.card) - me.coins;
-    if (shortfall <= 4 && (!bestAff || bestAll.score > bestAff.score * 1.3)) return { type: 'end_turn' };
+    if (shortfall <= 4 && (!bestAff || bestAll.score > bestAff.score * (ai.saveRatio ?? 1.3))) return { type: 'end_turn' };
   }
   if (!bestAff) return { type: 'end_turn' };
   const card = bestAff.card;
   const banEffect = card.effects.find((e) => e.type === 'ban_face') as { target: 'self' | 'opponent' } | undefined;
   if (banEffect) return { type: 'buy', cardId: card.id, face: bestFaceToBan(state, data, side, banEffect.target) };
   return { type: 'buy', cardId: card.id };
+}
+
+// ---------- 強いAI：試し打ちで購入を選ぶ ----------
+
+/** ログを除いて状態を複製し、試し打ち用に静かにする */
+function cloneQuiet(state: BattleState): BattleState {
+  const { log: _log, ...rest } = state;
+  const c = structuredClone(rest) as BattleState;
+  c.log = [];
+  c.quiet = true;
+  return c;
+}
+
+/** 候補（買う／手番終了）ごとに、その後を通常のAI同士で最後まで打って勝率を比べる */
+function chooseBuyByRollout(state: BattleState, data: GameData, ai: AiProfile, rand: () => number): Action {
+  const side = state.active;
+  const base: AiProfile = { weights: ai.weights, randomness: 0.2 };
+  const candidates: Action[] = [{ type: 'end_turn' }];
+  for (const id of state.players[side].market) {
+    if (buyError(state, data, side, id)) continue;
+    const card = data.cards[id];
+    const ban = card.effects.find((e) => e.type === 'ban_face') as { target: 'self' | 'opponent' } | undefined;
+    candidates.push(ban ? { type: 'buy', cardId: id, face: bestFaceToBan(state, data, side, ban.target) } : { type: 'buy', cardId: id });
+  }
+  if (candidates.length === 1) return candidates[0];
+  // どの候補にも同じ乱数の流れを使い、運の差ではなく手の差で比べる
+  const seeds = Array.from({ length: ai.rollouts! }, () => Math.floor(rand() * 2 ** 31));
+  let best = candidates[0];
+  let bestScore = -Infinity;
+  for (const action of candidates) {
+    let wins = 0;
+    for (let i = 0; i < seeds.length; i++) {
+      const s = cloneQuiet(state);
+      s.rngState = seeds[i];
+      const rr = createRng(seeds[i] ^ 0x5bd1e995);
+      applyAction(s, data, action);
+      for (let step = 0; step < 3000 && s.phase !== 'over'; step++) applyAction(s, data, chooseAction(s, data, base, rr));
+      if (s.winner === side) wins++;
+      else if (s.winner === null) wins += 0.5;
+    }
+    // 同点なら手番終了より購入を優先（少しだけ）
+    const score = wins + (action.type === 'buy' ? 0.01 : 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = action;
+    }
+  }
+  return best;
 }

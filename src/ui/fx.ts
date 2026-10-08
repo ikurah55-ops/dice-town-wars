@@ -1,5 +1,6 @@
 // 出目解決後のエフェクト再生（Web Animations API で命令的に描く）
 import type { Fx, GameData, Side } from '../core/types';
+import { sfx } from './audio';
 
 type Pt = { x: number; y: number };
 
@@ -168,7 +169,59 @@ function bolt(ctx: FxContext, from: Pt, to: Pt) {
 /**
  * 1つの演出を再生する。onImpact は数値（HP・コイン）を画面に反映するタイミングで呼ばれる。
  */
-export async function playFx(ctx: FxContext, fx: Fx, onImpact: () => void): Promise<void> {
+/** 演出の始まりに鳴らす音 */
+function startSound(ctx: FxContext, fx: Fx) {
+  const magic = 'card' in fx && ctx.data.cards[fx.card]?.category === 'magic';
+  if (magic) sfx('magic');
+  switch (fx.kind) {
+    case 'attack':
+      sfx('attack', fx.amount / 30);
+      break;
+    case 'shield':
+      sfx('shield');
+      break;
+    case 'zap':
+      sfx('zap');
+      break;
+    case 'storm':
+      sfx('storm');
+      break;
+    case 'destroy':
+      setTimeout(() => sfx('destroy'), 480);
+      break;
+  }
+}
+
+/** 数値が変わる瞬間に鳴らす音 */
+function impactSound(fx: Fx) {
+  switch (fx.kind) {
+    case 'coin':
+    case 'income':
+      sfx('coin', fx.amount / 12);
+      break;
+    case 'steal':
+      sfx('steal');
+      break;
+    case 'heal':
+      sfx('heal');
+      break;
+    case 'hit':
+    case 'zap':
+    case 'merc':
+      sfx('hit', fx.amount / 40);
+      break;
+    case 'storm':
+      sfx('hit', 0.8);
+      break;
+  }
+}
+
+export async function playFx(ctx: FxContext, fx: Fx, onImpactRaw: () => void): Promise<void> {
+  startSound(ctx, fx);
+  const onImpact = () => {
+    onImpactRaw();
+    impactSound(fx);
+  };
   const name = 'card' in fx ? ctx.data.cards[fx.card]?.name ?? '' : '';
   const fast = reduced();
 

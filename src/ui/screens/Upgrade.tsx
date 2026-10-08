@@ -14,6 +14,7 @@ import {
   type StorySave,
 } from '../../core/story';
 import type { CardDef, GameData } from '../../core/types';
+import { sfx } from '../audio';
 import { CardView, Header } from '../components';
 
 /** 経験値でカードの解放・レベルアップ・最大HPの強化を行う */
@@ -27,6 +28,7 @@ export function Upgrade({ data, save, onChange, onBack }: { data: GameData; save
   const act = (key: string, text: string, fn: () => StorySave) => {
     try {
       onChange(fn());
+      sfx(text.startsWith('解放') ? 'unlock' : 'levelup');
       setFlash({ key, text });
       setTimeout(() => setFlash((f) => (f?.key === key ? null : f)), 900);
     } catch {

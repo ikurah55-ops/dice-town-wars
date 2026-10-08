@@ -26,7 +26,7 @@ export function StoryMap({
   onBack,
   onPlay,
   onUpgrade,
-  onReset,
+  onOptions,
 }: {
   data: GameData;
   save: StorySave;
@@ -34,13 +34,12 @@ export function StoryMap({
   onBack: () => void;
   onPlay: (stage: number) => void;
   onUpgrade: () => void;
-  onReset: () => void;
+  onOptions: () => void;
 }) {
   const N = cfg.stageCount;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [h, setH] = useState(260);
   const [selected, setSelected] = useState<StageDef | null>(null);
-  const [settings, setSettings] = useState(false);
   const current = Math.min(N, highestCleared(save) + 1);
   const unlockCount = unlockableCards(data, save).length;
 
@@ -116,7 +115,7 @@ export function StoryMap({
           強化
           {unlockCount > 0 && <span className="notify-dot">{unlockCount}</span>}
         </button>
-        <button className="btn-icon" onClick={() => setSettings(true)} aria-label="設定">
+        <button className="btn-icon" onClick={onOptions} aria-label="オプション">
           ⚙
         </button>
       </div>
@@ -180,15 +179,6 @@ export function StoryMap({
         />
       )}
 
-      {settings && (
-        <Settings
-          onClose={() => setSettings(false)}
-          onReset={() => {
-            setSettings(false);
-            onReset();
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -253,37 +243,6 @@ function StageInfo({ data, save, stage: st, onClose, onPlay }: { data: GameData;
         <button className="btn btn-primary btn-big" style={{ marginTop: 12 }} onClick={onPlay}>
           {done ? '再挑戦する' : '挑戦する'}
         </button>
-      )}
-    </Modal>
-  );
-}
-
-function Settings({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {
-  const [confirm, setConfirm] = useState(false);
-  return (
-    <Modal title="設定" onClose={onClose}>
-      {!confirm ? (
-        <div className="menu-buttons">
-          <button className="btn btn-danger" onClick={() => setConfirm(true)}>
-            ストーリーの進行をリセット
-          </button>
-        </div>
-      ) : (
-        <div className="confirm-box">
-          <p>
-            <b>本当にリセットしますか？</b>
-            <br />
-            クリア状況・サブミッション・経験値・解放したカード・カードレベル・最大HPの強化がすべて消え、元に戻せません。
-          </p>
-          <div className="btn-row">
-            <button className="btn btn-ghost" onClick={() => setConfirm(false)}>
-              やめる
-            </button>
-            <button className="btn btn-danger" onClick={onReset}>
-              リセットする
-            </button>
-          </div>
-        </div>
       )}
     </Modal>
   );

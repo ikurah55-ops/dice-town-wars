@@ -318,3 +318,30 @@ describe('勝敗と長期戦', () => {
     }
   });
 });
+
+describe('AIの強さ', () => {
+  it('よわい・ふつう・つよいの設定がボスの重みに掛け合わされる', async () => {
+    const { applyAiLevel } = await import('../src/core/ai');
+    const levels = (await import('../src/data/ai_levels.json')).default as Record<string, import('../src/core/ai').AiLevelDef>;
+    const base = { weights: { economy: 1, attack: 0.5, counter: 1, magic: 1 }, randomness: 0.2 };
+    const easy = applyAiLevel(base, levels.easy);
+    expect(easy.skipChance).toBeGreaterThan(0);
+    expect(easy.weights.attack).toBeCloseTo(0.5 * levels.easy.weightScale.attack);
+    const hard = applyAiLevel(base, levels.hard);
+    expect(hard.rollouts).toBeGreaterThan(0);
+  });
+  it('つよいAIでも必ず決着する', async () => {
+    const { applyAiLevel } = await import('../src/core/ai');
+    const levels = (await import('../src/data/ai_levels.json')).default as Record<string, import('../src/core/ai').AiLevelDef>;
+    const hard = applyAiLevel(DEFAULT_AI, { ...levels.hard, rollouts: 4 });
+    const s = runAutoBattle(
+      data,
+      combatant('A', 'normal', ['orchard', 'archers', 'tax', 'watchtower', 'catapult']),
+      combatant('B', 'normal', ['cannon', 'mill', 'seal', 'toll', 'spearmen']),
+      [hard, DEFAULT_AI],
+      5,
+      createRng(9),
+    );
+    expect(s.winner).not.toBeNull();
+  });
+});

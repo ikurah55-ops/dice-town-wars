@@ -5,6 +5,7 @@ import { CardView, Header } from '../components';
 export interface BuildResult {
   dice: string;
   loadout: string[];
+  env?: string; // 練習モードの環境効果：'none' | 'random' | 環境効果ID
 }
 
 function loadLast(data: GameData, key: string, allowed: Set<string>, slots: number): BuildResult | null {
@@ -14,7 +15,7 @@ function loadLast(data: GameData, key: string, allowed: Set<string>, slots: numb
     const b = JSON.parse(raw) as BuildResult;
     if (!data.dice[b.dice]?.available) return null;
     // 使えないカードは外し、枠からあふれた分は切る
-    return { dice: b.dice, loadout: b.loadout.filter((id) => allowed.has(id)).slice(0, slots) };
+    return { dice: b.dice, loadout: b.loadout.filter((id) => allowed.has(id)).slice(0, slots), env: b.env };
   } catch {
     return null;
   }
@@ -30,6 +31,7 @@ export function Build({
   maxMagic,
   levels,
   environment,
+  envChoice = false,
   storageKey,
   validate,
   onBack,
@@ -43,6 +45,7 @@ export function Build({
   maxMagic: number;
   levels?: Record<string, number>; // ストーリーのカードレベル
   environment?: EnvironmentDef | null;
+  envChoice?: boolean; // 練習モード：環境効果を選べる
   storageKey: string;
   validate: (ids: string[]) => string | null;
   onBack: () => void;
@@ -51,6 +54,7 @@ export function Build({
   const last = loadLast(data, storageKey, new Set(candidates.map((c) => c.id)), slots);
   const [dice, setDice] = useState(last?.dice ?? 'normal');
   const [picked, setPicked] = useState<string[]>(last?.loadout ?? []);
+  const [env, setEnv] = useState<string>(last?.env && (last.env === 'random' || data.environments[last.env]) ? last.env : 'none');
   const error = validate(picked);
   const magicCount = picked.filter((id) => data.cards[id].category === 'magic').length;
   const lv = (id: string) => (levels ? (levels[id] ?? 1) : undefined);
@@ -62,7 +66,7 @@ export function Build({
 
   const start = () => {
     if (error) return;
-    const b = { dice, loadout: picked };
+    const b: BuildResult = envChoice ? { dice, loadout: picked, env } : { dice, loadout: picked };
     try {
       localStorage.setItem(storageKey, JSON.stringify(b));
     } catch {
@@ -85,6 +89,21 @@ export function Build({
             <span>{environment.description}</span>
           </div>
         )}
+        {envChoice && (
+          <label className="env-select" htmlFor="env-select">
+            <span>環境効果</span>
+            <select id="env-select" value={env} onChange={(e) => setEnv(e.target.value)}>
+              <option value="none">なし</option>
+              <option value="random">ランダム</option>
+              {data.environmentList.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {envChoice && env !== 'none' && env !== 'random' && <div className="env-note">{data.environments[env].description}</div>}
         <div className="section-label">サイコロ</div>
         <div className="dice-select">
           {Object.values(data.dice).map((d) => (

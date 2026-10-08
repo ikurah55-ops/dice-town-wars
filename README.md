@@ -20,13 +20,15 @@
 | `npm run sim -- --cards ./my-cards.json --config ./my-config.json` | データを差し替えて比較 |
 | `npm run sim -- --env walls` | 環境効果を付けて対戦（ID は environments.json） |
 | `npm run sim:story -- --runs 200 --seed 1` | ストーリー50ステージを通しで進めるシミュレーション |
+| `npm run sim:ai -- --games 20000` | AIの強さ（よわい／ふつう／つよい）を「ふつう」と対戦させて比較 |
 | `npm run build` | 本番ビルド（`dist/`、PWA対応） |
 
 ## 構成
 
 - `src/data/` … 数値はすべてここ
   - `cards.json` カード（`story` にストーリーでの解放時期・必要経験値・レベル・ボスの型）
-  - `environments.json` 環境効果11種／`story_config.json` ストーリーの式・経験値・枠など／`story_stages.json` ステージごとの上書き
+  - `ai_levels.json` 敵AIの強さ3段階
+  - `environments.json` 環境効果11種（背景色・仮アイコン・初見の説明つき）／`story_config.json` ストーリーの式・経験値・枠など／`story_stages.json` ステージごとの上書き
 - `src/core/` … ゲームロジック（UI非依存）
   - `rules.ts` 手番進行・効果・勝敗（`applyAction` で1手ずつ進む状態機械）
   - `ai.ts` CPUの購入判断（価値÷コスト）

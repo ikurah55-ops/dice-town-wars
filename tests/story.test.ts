@@ -95,9 +95,9 @@ describe('経験値', () => {
 });
 
 describe('解放・レベル・HP・枠', () => {
-  it('果樹園・弓兵隊は最初から。ステージ2クリアで見張り塔・救護所が解放可能', () => {
+  it('果樹園・弓兵隊・投石機は最初から。ステージ2クリアで見張り塔・救護所が解放可能', () => {
     let s = newSave(data, cfg, 1);
-    expect(availableCards(data, s).map((c) => c.id).sort()).toEqual(['archers', 'orchard']);
+    expect(availableCards(data, s).map((c) => c.id).sort()).toEqual(['archers', 'catapult', 'orchard']);
     expect(unlockableCards(data, s)).toHaveLength(0);
     s = clearUpTo(s, 2);
     expect(unlockableCards(data, s).map((c) => c.id).sort()).toEqual(['infirmary', 'watchtower']);

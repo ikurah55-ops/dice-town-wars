@@ -120,6 +120,9 @@ export interface EnvironmentDef {
   name: string;
   description: string;
   effects: EnvEffect[];
+  color?: string; // 戦闘画面の背景色
+  icon?: string; // 発表画面の仮アイコン（イラストは後で差し替え）
+  detail?: string; // 初めて出たときの詳しい説明
 }
 
 // ===== 拡張用の入口 =====

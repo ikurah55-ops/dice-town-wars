@@ -2113,3 +2113,266 @@ button {
 .exp-list span {
   text-align: left;
 }
+
+/* ======================================================================
+   チュートリアル・環境効果の発表・オプション
+   ====================================================================== */
+.tut {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  cursor: pointer;
+}
+.tut-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+.tut-spot {
+  position: absolute;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62), 0 0 0 3px #ffd877, 0 0 24px rgba(255, 216, 119, 0.8);
+  pointer-events: none;
+  transition: all 0.25s ease-out;
+}
+.tut-bubble {
+  position: absolute;
+  width: min(360px, 90%);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 12px 14px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--gold);
+  animation: pop 0.22s ease-out;
+}
+.tut-title {
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--gold-dark);
+  margin-bottom: 4px;
+}
+.tut-text {
+  font-size: 14px;
+  line-height: 1.55;
+}
+.tut-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.tut-tap {
+  font-weight: 800;
+  color: var(--gold-dark);
+  animation: pulse 0.9s infinite alternate;
+}
+.tut-skip {
+  position: absolute;
+  right: max(10px, env(safe-area-inset-right));
+  top: max(8px, env(safe-area-inset-top));
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(246, 234, 210, 0.15);
+  border: 1.5px solid rgba(246, 234, 210, 0.4);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.env-announce {
+  position: absolute;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: radial-gradient(ellipse at 30% 40%, color-mix(in srgb, var(--env) 80%, #fff 20%), var(--env) 45%, #0c0806 100%);
+  animation: fade 0.3s;
+}
+.env-announce-inner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 16px 28px;
+  max-width: 760px;
+}
+.env-art {
+  flex: none;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 96px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.06) 60%, transparent 72%);
+  border: 3px solid rgba(255, 233, 176, 0.7);
+  box-shadow: 0 0 40px rgba(255, 233, 176, 0.35), inset 0 0 30px rgba(0, 0, 0, 0.3);
+  animation: envArt 0.7s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+@keyframes envArt {
+  from {
+    transform: scale(0.3) rotate(-30deg);
+    opacity: 0;
+  }
+}
+.env-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.env-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: #ffe9b0;
+}
+.env-name {
+  font-size: 40px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 233, 176, 0.6);
+  letter-spacing: 0.06em;
+  animation: envName 0.6s ease-out 0.15s backwards;
+}
+@keyframes envName {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+.env-desc {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff6dc;
+}
+.env-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255, 233, 176, 0.5);
+  font-size: 13px;
+  line-height: 1.55;
+  color: #fff;
+}
+.env-detail b {
+  color: #ffd877;
+}
+.env-tap {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffe9b0;
+  animation: pulse 0.9s infinite alternate;
+}
+
+/* 環境効果ごとの戦闘画面の背景 */
+.battle.has-env {
+  background: radial-gradient(ellipse at 50% 0%, var(--env-bg), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--env-bg) 45%, #1a120c), #1a120c);
+  transition: background 0.6s;
+}
+.battle.has-env .board {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 練習モードの環境効果選択 */
+.env-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.env-select select {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #2a1c12;
+  color: var(--paper);
+  border: 1.5px solid rgba(180, 138, 232, 0.7);
+}
+.env-note {
+  font-size: 11.5px;
+  color: #e8d0ff;
+  line-height: 1.4;
+}
+
+/* オプション */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 14px;
+}
+.opt-row > span:first-child {
+  width: 92px;
+  flex: none;
+}
+.opt-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--gold-dark);
+}
+.opt-row b {
+  width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.seg {
+  display: inline-flex;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1.5px solid rgba(42, 28, 18, 0.35);
+}
+.seg button {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(42, 28, 18, 0.06);
+}
+.seg button + button {
+  border-left: 1.5px solid rgba(42, 28, 18, 0.25);
+}
+.seg button.on {
+  background: linear-gradient(180deg, #f2bd52, var(--gold-dark));
+  color: #2a1606;
+}
+.opt-note {
+  margin: -2px 0 4px 104px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.opt-danger {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(42, 28, 18, 0.15);
+}
+.opt-done {
+  color: var(--eco);
+  font-weight: 700;
+}
+.title-buttons .btn-row .btn {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .env-art,
+  .env-name,
+  .tut-tap,
+  .env-tap {
+    animation: none;
+  }
+}

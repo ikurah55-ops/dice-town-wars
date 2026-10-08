@@ -19,7 +19,7 @@
     "story": {"unlockAfterStage": 0, "unlockExp": 0, "levelable": true, "levelCost": [2,4,6,8], "bossTheme": null} },
   { "id": "catapult", "name": "投石機", "category": "attack", "cost": 5, "faces": [6],
     "effects": [{"type": "deal_damage", "amount": 30}],
-    "story": {"unlockAfterStage": 5, "unlockExp": 3, "levelable": true, "levelCost": [2,4,6,8], "bossTheme": null} },
+    "story": {"unlockAfterStage": 0, "unlockExp": 0, "levelable": true, "levelCost": [2,4,6,8], "bossTheme": null} },
   { "id": "archers", "name": "弓兵隊", "category": "attack", "cost": 6, "faces": [1,3,5],
     "effects": [{"type": "deal_damage", "amount": 12}],
     "story": {"unlockAfterStage": 0, "unlockExp": 0, "levelable": true, "levelCost": [2,4,6,8], "bossTheme": "attack", "bossOrder": 1} },

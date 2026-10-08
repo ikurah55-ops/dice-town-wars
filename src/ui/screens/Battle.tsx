@@ -5,7 +5,11 @@ import { applyAction, buyError, cardCost, createBattle, destroyTargets, magicUse
 import type { Action, BattleState, Combatant, EnvironmentDef, Fx, GameData, PlayerState, Side } from '../../core/types';
 import { CardView, Die, MiniDie, Modal } from '../components';
 import { envLongBattleTurn } from '../../core/env';
+import { sfx } from '../audio';
 import { groupFx, playFx } from '../fx';
+import { getSettings, hasSeen, markSeen } from '../settings';
+import { EnvAnnounce, Tutorial, type TutStep } from '../Tutorial';
+import { battleBasicsSteps, battleBuySteps, envIntroSteps, TUT } from '../tutorials';
 import { HowToPlay } from './Title';
 
 const ROLL_MS = 650;
@@ -25,6 +29,8 @@ export function Battle({
   environment,
   onFinish,
   onRetire,
+  onOptions,
+  tutorial = false,
 }: {
   data: GameData;
   player: Combatant;
@@ -33,7 +39,27 @@ export function Battle({
   environment: EnvironmentDef | null;
   onFinish: (s: BattleState) => void;
   onRetire: () => void;
+  onOptions: () => void;
+  tutorial?: boolean; // ストーリーのステージ1：戦い方のチュートリアルを出す
 }) {
+  // 戦闘前に出すもの：環境効果の説明 → 環境効果の発表 → 戦い方のチュートリアル
+  type Intro = { kind: 'tut'; id: string; steps: TutStep[] } | { kind: 'env'; first: boolean };
+  const [intro, setIntro] = useState<Intro[]>(() => {
+    const q: Intro[] = [];
+    if (environment) {
+      if (!hasSeen(TUT.envIntro)) q.push({ kind: 'tut', id: TUT.envIntro, steps: envIntroSteps() });
+      q.push({ kind: 'env', first: !hasSeen(TUT.env(environment.id)) });
+    }
+    if (tutorial && !hasSeen(TUT.battleBasics)) q.push({ kind: 'tut', id: TUT.battleBasics, steps: battleBasicsSteps(data.config) });
+    return q;
+  });
+  const [buyTut, setBuyTut] = useState(false);
+  const introDone = () => {
+    const cur = intro[0];
+    if (cur?.kind === 'tut') markSeen(cur.id);
+    if (cur?.kind === 'env' && environment) markSeen(TUT.env(environment.id));
+    setIntro(intro.slice(1));
+  };
   const [state, setState] = useState<BattleState>(() =>
     createBattle(data, player, cpuDef, { seed: Math.floor(Math.random() * 2 ** 31), environment }),
   );
@@ -82,7 +108,12 @@ export function Battle({
     }
     const isRoll = a.type === 'roll' || a.type === 'reroll' || a.type === 'keep';
     const fxs = groupFx(next.log.slice(prev.log.length).flatMap((l) => (l.fx ? [l.fx] : [])));
-    if (!isRoll && fxs.length === 0) {
+    if (a.type === 'buy') sfx('buy');
+    // バトル演出「なし」：すぐに結果を出す（効果音は短く鳴らす）
+    if (!getSettings().battleFx || (!isRoll && fxs.length === 0)) {
+      if (isRoll) sfx('land');
+      if (fxs.some((f) => f.kind === 'hit' || f.kind === 'zap' || f.kind === 'merc')) sfx('hit', 0.4);
+      else if (fxs.some((f) => f.kind === 'coin' || f.kind === 'income' || f.kind === 'steal')) sfx('coin', 0.3);
       stateRef.current = next;
       setState(next);
       return;
@@ -97,6 +128,7 @@ export function Battle({
       if (a.type !== 'keep') {
         // 女神で「この目で決定」したときは振り演出なし
         setRolling(true);
+        sfx('roll');
         const iv = setInterval(() => setRollFace(1 + Math.floor(Math.random() * 6)), 70);
         await sleep(ROLL_MS);
         clearInterval(iv);
@@ -104,6 +136,7 @@ export function Battle({
         setRolling(false);
         setPreview(face);
         setBigDie({ face, enemy: prev.active === 1 });
+        sfx('land');
         await sleep(SHOW_FACE_MS);
         if (!alive.current) return;
         setBigDie(null);
@@ -120,6 +153,7 @@ export function Battle({
       for (const fx of fxs) {
         if (fx.kind === 'built') {
           setBuilt({ side: fx.side, cards: countCards(fx.cards) });
+          sfx('build');
           await sleep(BUILT_MS);
           if (!alive.current) return;
           setBuilt(null);
@@ -144,13 +178,22 @@ export function Battle({
 
   // CPUの手番を自動で進める
   useEffect(() => {
-    if (state.phase === 'over' || state.active !== 1 || busy) return;
-    const a = chooseAction(state, data, ai, Math.random);
-    const delay = a.type === 'roll' || a.type === 'reroll' ? CPU_DELAY.roll : a.type === 'buy' ? CPU_DELAY.buy : CPU_DELAY.other;
-    const t = setTimeout(() => void perform(a), delay);
+    if (state.phase === 'over' || state.active !== 1 || busy || intro.length > 0) return;
+    const delay = state.phase === 'roll' || state.phase === 'reroll' ? CPU_DELAY.roll : state.phase === 'buy' ? CPU_DELAY.buy : CPU_DELAY.other;
+    const t = setTimeout(() => void perform(chooseAction(stateRef.current, data, ai, Math.random)), delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, busy]);
+  }, [state, busy, intro.length]);
+
+  // ステージ1：最初の購入フェーズで市場の説明
+  useEffect(() => {
+    if (tutorial && marketOpen && state.active === 0 && state.phase === 'buy' && !busy && !hasSeen(TUT.battleBuy)) setBuyTut(true);
+  }, [tutorial, marketOpen, state.active, state.phase, busy]);
+
+  // 勝敗の効果音
+  useEffect(() => {
+    if (state.phase === 'over') sfx(state.winner === 0 ? 'win' : 'lose');
+  }, [state.phase, state.winner]);
 
   // 自分の購入フェーズに入ったら市場を開き、手番が移ったら閉じる
   useEffect(() => {
@@ -196,7 +239,11 @@ export function Battle({
   };
 
   return (
-    <div className="screen battle" ref={stageRef}>
+    <div
+      className={`screen battle ${environment ? 'has-env' : ''}`}
+      ref={stageRef}
+      style={environment?.color ? { ['--env-bg' as string]: environment.color } : undefined}
+    >
       {/* 上：CPU */}
       <div className={`bar bar-enemy ${state.active === 1 && state.phase !== 'over' ? 'is-active' : ''}`}>
         <span className="turn-label">
@@ -242,7 +289,7 @@ export function Battle({
             デッキを見る
           </button>
           {myTurn && state.phase === 'roll' && (
-            <button className="btn btn-primary btn-side" disabled={busy} onClick={() => void perform({ type: 'roll' })}>
+            <button className="btn btn-primary btn-side" disabled={busy || intro.length > 0} onClick={() => void perform({ type: 'roll' })}>
               サイコロを振る
             </button>
           )}
@@ -387,8 +434,30 @@ export function Battle({
         </Modal>
       )}
 
+      {intro[0]?.kind === 'tut' && <Tutorial key={intro[0].id} steps={intro[0].steps} onDone={introDone} />}
+      {intro[0]?.kind === 'env' && environment && (
+        <EnvAnnounce
+          env={environment}
+          firstTime={intro[0].first}
+          onDone={introDone}
+        />
+      )}
+      {buyTut && (
+        <Tutorial
+          steps={battleBuySteps()}
+          onDone={() => {
+            markSeen(TUT.battleBuy);
+            setBuyTut(false);
+          }}
+        />
+      )}
+
       {menu && (
         <Menu
+          onOptions={() => {
+            setMenu(false);
+            onOptions();
+          }}
           onClose={() => setMenu(false)}
           onRetire={() => {
             setMenu(false);
@@ -663,7 +732,7 @@ function LogModal({ state, onClose }: { state: BattleState; onClose: () => void 
   );
 }
 
-function Menu({ onClose, onRetire }: { onClose: () => void; onRetire: () => void }) {
+function Menu({ onClose, onRetire, onOptions }: { onClose: () => void; onRetire: () => void; onOptions: () => void }) {
   const [help, setHelp] = useState(false);
   if (help) return <HowToPlay onClose={() => setHelp(false)} />;
   return (
@@ -671,6 +740,9 @@ function Menu({ onClose, onRetire }: { onClose: () => void; onRetire: () => void
       <div className="menu-buttons">
         <button className="btn btn-ghost" onClick={() => setHelp(true)}>
           遊び方
+        </button>
+        <button className="btn btn-ghost" onClick={onOptions}>
+          オプション（音量・演出・AIの強さ）
         </button>
         <button className="btn btn-danger" onClick={onRetire}>
           リタイアしてビルドに戻る
