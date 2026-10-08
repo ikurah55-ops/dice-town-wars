@@ -12,6 +12,9 @@ export function CardView({
   badge,
   onClick,
   compact,
+  level,
+  cost,
+  uses,
 }: {
   card: CardDef;
   data: GameData;
@@ -21,6 +24,9 @@ export function CardView({
   badge?: ReactNode;
   onClick?: () => void;
   compact?: boolean;
+  level?: number; // ストーリーのカードレベル（省略時はLv表示なし）
+  cost?: number; // 環境効果込みのコスト
+  uses?: number; // 魔法の効果回数
 }) {
   const counter = card.category === 'counter';
   return (
@@ -36,6 +42,7 @@ export function CardView({
           <TypeIcon category={card.category} />
         </span>
         <span className="card-name">{card.name}</span>
+        {level !== undefined && card.category !== 'magic' && <span className="card-lv">Lv{level}</span>}
         {card.faces && (
           <span className={`card-faces ${counter ? 'is-counter' : ''}`} title={counter ? '相手の出目で発動' : '自分の出目で発動'}>
             {counter && <span className="faces-label">相手</span>}
@@ -48,12 +55,12 @@ export function CardView({
       {/* イラストを最大限広く見せ、コスト・在庫・効果文は絵の上に重ねる */}
       <div className="card-art">
         <CardArt id={card.id} />
-        <span className="cost" aria-hidden="true">
-          {card.cost}
+        <span className={`cost ${cost !== undefined && cost !== card.cost ? 'cost-changed' : ''}`} aria-hidden="true">
+          {cost ?? card.cost}
         </span>
         {stock !== undefined && <span className={`stock ${stock === 0 ? 'stock-out' : ''}`}>残{stock}</span>}
         {badge && <span className="card-badge">{badge}</span>}
-        <div className="card-text">{describeCard(card, data)}</div>
+        <div className="card-text">{describeCard(card, data, level ?? 1, uses)}</div>
       </div>
     </button>
   );

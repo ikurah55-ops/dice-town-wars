@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { loadoutCandidates, validateLoadout } from '../../core/data';
-import type { BossDef, GameData } from '../../core/types';
+import type { CardDef, EnvironmentDef, GameData } from '../../core/types';
 import { CardView, Header } from '../components';
 
 export interface BuildResult {
@@ -8,46 +7,70 @@ export interface BuildResult {
   loadout: string[];
 }
 
-const STORAGE_KEY = 'dice-town-last-build';
-
-function loadLast(data: GameData): BuildResult | null {
+function loadLast(data: GameData, key: string, allowed: Set<string>, slots: number): BuildResult | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const b = JSON.parse(raw) as BuildResult;
     if (!data.dice[b.dice]?.available) return null;
-    if (!b.loadout.every((id) => data.cards[id] && !data.cards[id].base)) return null;
-    return b;
+    // 使えないカードは外し、枠からあふれた分は切る
+    return { dice: b.dice, loadout: b.loadout.filter((id) => allowed.has(id)).slice(0, slots) };
   } catch {
     return null;
   }
 }
 
-export function Build({ data, boss, onBack, onStart }: { data: GameData; boss: BossDef; onBack: () => void; onStart: (b: BuildResult) => void }) {
-  const last = loadLast(data);
+/** 練習・ストーリー共通のビルド画面 */
+export function Build({
+  data,
+  vsLabel,
+  candidates,
+  locked = [],
+  slots,
+  maxMagic,
+  levels,
+  environment,
+  storageKey,
+  validate,
+  onBack,
+  onStart,
+}: {
+  data: GameData;
+  vsLabel: string;
+  candidates: CardDef[]; // 持ち込めるカード
+  locked?: { card: CardDef; note: string }[]; // まだ使えないカード（表示のみ）
+  slots: number;
+  maxMagic: number;
+  levels?: Record<string, number>; // ストーリーのカードレベル
+  environment?: EnvironmentDef | null;
+  storageKey: string;
+  validate: (ids: string[]) => string | null;
+  onBack: () => void;
+  onStart: (b: BuildResult) => void;
+}) {
+  const last = loadLast(data, storageKey, new Set(candidates.map((c) => c.id)), slots);
   const [dice, setDice] = useState(last?.dice ?? 'normal');
   const [picked, setPicked] = useState<string[]>(last?.loadout ?? []);
-  const { cards: need, maxMagic } = data.config.loadout;
-  const error = validateLoadout(data, picked);
+  const error = validate(picked);
   const magicCount = picked.filter((id) => data.cards[id].category === 'magic').length;
+  const lv = (id: string) => (levels ? (levels[id] ?? 1) : undefined);
 
   const toggle = (id: string) => {
     if (picked.includes(id)) setPicked(picked.filter((x) => x !== id));
-    else if (picked.length < need) setPicked([...picked, id]);
+    else if (picked.length < slots) setPicked([...picked, id]);
   };
 
   const start = () => {
     if (error) return;
     const b = { dice, loadout: picked };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
+      localStorage.setItem(storageKey, JSON.stringify(b));
     } catch {
       /* 保存できなくても続行 */
     }
     onStart(b);
   };
 
-  const candidates = loadoutCandidates(data);
   const groups = ['economy', 'attack', 'counter', 'magic'] as const;
   const groupLabel = { economy: '経済', attack: '攻撃', counter: 'カウンター', magic: '魔法' };
 
@@ -55,7 +78,13 @@ export function Build({ data, boss, onBack, onStart }: { data: GameData; boss: B
     <div className="screen build-screen">
       <div className="build-side">
         <Header title="ビルド" onBack={onBack} />
-        <div className="vs-line">VS {boss.name}</div>
+        <div className="vs-line">{vsLabel}</div>
+        {environment && (
+          <div className="env-box">
+            <b>環境効果：{environment.name}</b>
+            <span>{environment.description}</span>
+          </div>
+        )}
         <div className="section-label">サイコロ</div>
         <div className="dice-select">
           {Object.values(data.dice).map((d) => (
@@ -73,38 +102,41 @@ export function Build({ data, boss, onBack, onStart }: { data: GameData; boss: B
         </div>
         <div className="build-status">
           <span>
-            持ち込み {picked.length}/{need}
+            持ち込み {picked.length}/{slots}
           </span>
           <span className={magicCount > maxMagic ? 'warn' : ''}>
             魔法 {magicCount}/{maxMagic}
           </span>
         </div>
         <button className="btn btn-primary btn-start" disabled={!!error} onClick={start}>
-          {error ?? '戦闘開始！'}
+          {error ?? (picked.length < slots ? `戦闘開始！（空き枠${slots - picked.length}）` : '戦闘開始！')}
         </button>
       </div>
       <div className="scroll build-cards">
         <div className="section-label">基本カード（毎回市場に並ぶ）</div>
         <div className="card-grid">
           {data.config.marketBaseCards.map((id) => (
-            <CardView key={id} card={data.cards[id]} data={data} />
+            <CardView key={id} card={data.cards[id]} data={data} level={lv(id)} />
           ))}
         </div>
 
-        {groups.map((g) => (
-          <div key={g}>
-            <div className="section-label">{groupLabel[g]}</div>
-            <div className="card-grid">
-              {candidates
-                .filter((c) => c.category === g)
-                .map((c) => {
+        {groups.map((g) => {
+          const list = candidates.filter((c) => c.category === g);
+          const lockedList = locked.filter((l) => l.card.category === g);
+          if (list.length === 0 && lockedList.length === 0) return null;
+          return (
+            <div key={g}>
+              <div className="section-label">{groupLabel[g]}</div>
+              <div className="card-grid">
+                {list.map((c) => {
                   const sel = picked.includes(c.id);
-                  const blocked = !sel && (picked.length >= need || (c.category === 'magic' && magicCount >= maxMagic));
+                  const blocked = !sel && (picked.length >= slots || (c.category === 'magic' && magicCount >= maxMagic));
                   return (
                     <CardView
                       key={c.id}
                       card={c}
                       data={data}
+                      level={lv(c.id)}
                       selected={sel}
                       disabled={blocked}
                       badge={sel ? '✓ 選択中' : undefined}
@@ -112,9 +144,15 @@ export function Build({ data, boss, onBack, onStart }: { data: GameData; boss: B
                     />
                   );
                 })}
+                {lockedList.map(({ card, note }) => (
+                  <div key={card.id} className="card-locked">
+                    <CardView card={card} data={data} disabled badge={`🔒 ${note}`} />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

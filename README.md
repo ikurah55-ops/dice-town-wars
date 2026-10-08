@@ -1,6 +1,9 @@
-# ダイスタウン・ウォーズ（試作版 v0.1）
+# ダイスタウン・ウォーズ（試作版 v0.2）
 
-出目で発動するカードで戦う、CPU対戦型デッキ構築ゲーム。成長要素なし・ステージ1つの試作版。
+出目で発動するカードで戦う、CPU対戦型デッキ構築ゲーム。
+
+- **ストーリーモード**：全50ステージ。経験値でカードの解放・レベルアップ・最大HPの強化をしながら進む（進行は端末に保存）
+- **練習モード**：全カードを最初から使える。カードはLv1、最大HP180固定
 仕様は `claude-code-prompt_dice-town.md` を参照。
 
 **遊ぶ**：https://ikurah55-ops.github.io/dice-town-wars/ （スマホでは横向き。ホーム画面に追加するとアプリとして起動）
@@ -15,15 +18,21 @@
 | `npm test` | ユニットテスト |
 | `npm run sim -- --games 100000 --seed 1` | CPU同士の大量対戦シミュレーション |
 | `npm run sim -- --cards ./my-cards.json --config ./my-config.json` | データを差し替えて比較 |
+| `npm run sim -- --env walls` | 環境効果を付けて対戦（ID は environments.json） |
+| `npm run sim:story -- --runs 200 --seed 1` | ストーリー50ステージを通しで進めるシミュレーション |
 | `npm run build` | 本番ビルド（`dist/`、PWA対応） |
 
 ## 構成
 
-- `src/data/` … カード・サイコロ・ボス・定数（数値はすべてここ）
+- `src/data/` … 数値はすべてここ
+  - `cards.json` カード（`story` にストーリーでの解放時期・必要経験値・レベル・ボスの型）
+  - `environments.json` 環境効果11種／`story_config.json` ストーリーの式・経験値・枠など／`story_stages.json` ステージごとの上書き
 - `src/core/` … ゲームロジック（UI非依存）
   - `rules.ts` 手番進行・効果・勝敗（`applyAction` で1手ずつ進む状態機械）
   - `ai.ts` CPUの購入判断（価値÷コスト）
   - `cards.ts` 効果の説明文、レベル補正 `scaleAmount`
+  - `env.ts` 環境効果フック（戦闘開始・基本収入・コスト・施設の発動量・魔法の回数・サイコロの重み・長期戦）
+  - `story.ts` ストーリーのステージ生成・経験値・解放・強化・セーブデータ
   - `auto.ts` CPU同士の自動対戦
 - `src/ui/` … React 画面
 - `src/sim/simulate.ts` … シミュレーションCLI
@@ -39,6 +48,7 @@
 
 ## 拡張の入口
 
-- 環境効果：`createBattle(..., { modifiers })` の `BattleModifiers`
-- 成長要素：`Combatant.maxHp` / `Combatant.cardLevels`（`scaleAmount` で効果量に反映）
+- 環境効果：`createBattle(..., { environment })`。新しい効果は既存の種類の組み合わせなら environments.json に足すだけ
+- カードレベル：`Combatant.cardLevels`（1レベルごとに+10%、`config.json` の `levelBonusPerLevel`）
+- カードを追加するとき：`cards.json` の `story` を必ず入れる（決め方は `claude-code-prompt` の「カードを追加するときのルール」）
 - 偏ったサイコロ：`dice.json` の `available` と `modifiers.incomeBonus`

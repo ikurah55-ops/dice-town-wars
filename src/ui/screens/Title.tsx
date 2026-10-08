@@ -12,7 +12,7 @@ async function tryLandscape() {
   }
 }
 
-export function Title({ onStart }: { onStart: () => void }) {
+export function Title({ onStory, onPractice, storyProgress }: { onStory: () => void; onPractice: () => void; storyProgress: number }) {
   const [help, setHelp] = useState(false);
   return (
     <div className="screen title-screen">
@@ -30,13 +30,24 @@ export function Title({ onStart }: { onStart: () => void }) {
       </div>
       <div className="title-buttons">
         <button
-          className="btn btn-primary btn-big"
+          className="btn btn-primary btn-big mode-btn"
           onClick={() => {
             void tryLandscape();
-            onStart();
+            onStory();
           }}
         >
-          はじめる
+          ストーリーモード
+          <small>{storyProgress > 0 ? `ステージ${storyProgress}までクリア` : '全50ステージ'}</small>
+        </button>
+        <button
+          className="btn btn-ghost mode-btn"
+          onClick={() => {
+            void tryLandscape();
+            onPractice();
+          }}
+        >
+          練習モード
+          <small>全カードを使って自由に対戦</small>
         </button>
         <button className="btn btn-ghost" onClick={() => setHelp(true)}>
           遊び方

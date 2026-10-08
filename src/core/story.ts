@@ -101,8 +101,8 @@ export function generateStage(
 ): StageDef {
   const b = cfg.boss;
   const isBig = s % b.bigBossEvery === 0;
-  let hp = b.hpBase + b.hpPerStage * (s - 1);
-  if (isBig) hp = Math.round(hp * b.bigBossHpMult);
+  const rawHp = b.hpBase + b.hpPerStage * (s - 1);
+  const hp = Math.round(isBig ? rawHp * b.bigBossHpMult : rawHp);
   const cardLevel = Math.min(b.maxLevel, 1 + Math.floor((s - 1) / b.levelEvery));
   let count = Math.min(b.maxCards, Math.floor((s + b.cardsOffset) / b.cardsDivisor));
   if (isBig) count = Math.min(b.maxCards, count + b.bigBossExtraCards);
@@ -317,7 +317,8 @@ export function playerCombatant(data: GameData, cfg: StoryConfig, save: StorySav
 /** ストーリーの持ち込みの検証（枠数・魔法の上限・解放済みか） */
 export function validateStoryLoadout(data: GameData, cfg: StoryConfig, save: StorySave, ids: string[]): string | null {
   const slots = loadoutSlots(cfg, save);
-  if (ids.length !== slots) return `持ち込みカードを${slots}枚選んでください`;
+  // 枠は上限。解放済みのカードが足りないこともあるので、少ない枚数でも始められる
+  if (ids.length > slots) return `持ち込みは${slots}枚までです`;
   if (new Set(ids).size !== ids.length) return '同じカードは1枚までです';
   if (ids.some((id) => !data.cards[id] || !isUnlocked(data.cards[id], save))) return '解放していないカードがあります';
   const magic = ids.filter((id) => data.cards[id].category === 'magic').length;
@@ -360,11 +361,11 @@ export function recordResult(
     } else gains.push({ label: 'クリア', exp: cfg.exp.repeatClear });
     if (!prev.halfHp && o.hpLeft >= o.maxHp * cfg.subMissions.halfHpRatio) {
       next.halfHp = true;
-      gains.push({ label: 'サブミッション：HPを半分以上残して勝利', exp: cfg.exp.subHalfHp });
+      gains.push({ label: '★ HPを半分以上残して勝利', exp: cfg.exp.subHalfHp });
     }
     if (!prev.fastWin && o.turns <= cfg.subMissions.fastWinTurns) {
       next.fastWin = true;
-      gains.push({ label: `サブミッション：${cfg.subMissions.fastWinTurns}ターン以内に勝利`, exp: cfg.exp.subFastWin });
+      gains.push({ label: `★ ${cfg.subMissions.fastWinTurns}ターン以内に勝利`, exp: cfg.exp.subFastWin });
     }
     subs[stage] = next;
   } else {

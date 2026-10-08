@@ -137,6 +137,9 @@ describe('解放・レベル・HP・枠', () => {
     expect(loadoutSlots(cfg, clearUpTo(s, 12))).toBe(4);
     expect(validateStoryLoadout(data, cfg, s, ['orchard', 'archers'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, s, ['orchard', 'cannon'])).toMatch('解放');
+    expect(validateStoryLoadout(data, cfg, s, ['orchard'])).toBeNull(); // 枠より少なくてもよい
+    expect(validateStoryLoadout(data, cfg, s, ['orchard', 'archers', 'watchtower'])).toMatch('2枚まで');
+    expect(generateStage(data, cfg, 16, null, {}).hp % 1).toBe(0); // HPは整数
   });
   it('プレイヤーのカードレベルと最大HPが戦闘データに入る', () => {
     const s: StorySave = { ...newSave(data, cfg, 1), levels: { barracks: 3, archers: 2 }, hpUps: 2 };

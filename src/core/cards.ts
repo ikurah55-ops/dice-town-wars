@@ -79,11 +79,11 @@ const TIMING_LABEL: Record<string, string> = {
   turn_end: '手番終了時：',
 };
 
-export function describeCard(card: CardDef, data: GameData, level = 1): string {
+export function describeCard(card: CardDef, data: GameData, level = 1, uses = data.config.magicUses): string {
   const body = card.effects.map((e) => describeEffect(e, data, level)).join('／');
   if (card.category === 'magic') {
     const t = card.timing ? (TIMING_LABEL[card.timing] ?? '') : '';
-    return `${t}${body}（${data.config.magicUses}回）`;
+    return `${t}${body}（${uses}回）`;
   }
   return body;
 }

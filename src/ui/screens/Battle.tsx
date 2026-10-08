@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { chooseAction, type AiProfile } from '../../core/ai';
 import { describeCard } from '../../core/cards';
-import { bossMaxHp } from '../../core/data';
-import { applyAction, buyError, createBattle, destroyTargets } from '../../core/rules';
-import type { Action, BattleState, BossDef, Fx, GameData, PlayerState, Side } from '../../core/types';
+import { applyAction, buyError, cardCost, createBattle, destroyTargets, magicUses } from '../../core/rules';
+import type { Action, BattleState, Combatant, EnvironmentDef, Fx, GameData, PlayerState, Side } from '../../core/types';
 import { CardView, Die, MiniDie, Modal } from '../components';
+import { envLongBattleTurn } from '../../core/env';
 import { groupFx, playFx } from '../fx';
-import type { BuildResult } from './Build';
 import { HowToPlay } from './Title';
 
 const ROLL_MS = 650;
@@ -20,25 +19,25 @@ const FACES = [1, 2, 3, 4, 5, 6];
 
 export function Battle({
   data,
-  boss,
-  build,
+  player,
+  cpu: cpuDef,
+  ai,
+  environment,
   onFinish,
   onRetire,
 }: {
   data: GameData;
-  boss: BossDef;
-  build: BuildResult;
+  player: Combatant;
+  cpu: Combatant;
+  ai: AiProfile;
+  environment: EnvironmentDef | null;
   onFinish: (s: BattleState) => void;
   onRetire: () => void;
 }) {
   const [state, setState] = useState<BattleState>(() =>
-    createBattle(
-      data,
-      { name: 'あなた', maxHp: data.config.playerMaxHp, dice: build.dice, loadout: build.loadout },
-      { name: boss.name, maxHp: bossMaxHp(data.config, boss.stage), dice: boss.dice, loadout: boss.loadout },
-      { seed: Math.floor(Math.random() * 2 ** 31) },
-    ),
+    createBattle(data, player, cpuDef, { seed: Math.floor(Math.random() * 2 ** 31), environment }),
   );
+  const [envOpen, setEnvOpen] = useState(false);
   const [rolling, setRolling] = useState(false);
   const [busy, setBusy] = useState(false); // 出目の演出中は操作を止める
   const [bigDie, setBigDie] = useState<{ face: number; enemy: boolean } | null>(null);
@@ -64,7 +63,6 @@ export function Battle({
   const [logOpen, setLogOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const ai: AiProfile = useMemo(() => ({ weights: boss.weights, randomness: boss.randomness }), [boss]);
 
   const busyRef = useRef(false);
 
@@ -176,7 +174,7 @@ export function Battle({
   const cpu = state.players[1];
   const myTurn = state.active === 0 && state.phase !== 'over';
   const canBuy = myTurn && state.phase === 'buy';
-  const { afterTurn } = data.config.longBattle;
+  const afterTurn = envLongBattleTurn(state, data.config.longBattle.afterTurn);
 
   const shown = (p: PlayerState, side: Side): PlayerState => (view ? { ...p, hp: view.hp[side], coins: view.coins[side] } : p);
 
@@ -207,6 +205,11 @@ export function Battle({
             <span className="long-warn">{state.turn >= afterTurn ? '長期戦！' : `長期戦まで${afterTurn - state.turn + 1}`}</span>
           )}
         </span>
+        {state.environment && (
+          <button className="env-chip" onClick={() => setEnvOpen(true)} aria-label="環境効果の説明">
+            {state.environment.name}
+          </button>
+        )}
         <StatusLine p={shown(cpu, 1)} side={1} data={data} onMagic={setCardDetail} />
         <button className="btn-icon" onClick={() => setMenu(true)} aria-label="オプション">
           ☰
@@ -306,7 +309,7 @@ export function Battle({
           </div>
           <div className="market-grid">
             {/* 左上からコストの低い順（同コストは市場の並び順のまま） */}
-            {[...me.market].sort((x, y) => data.cards[x].cost - data.cards[y].cost).map((id) => {
+            {[...me.market].sort((x, y) => cardCost(state, data.cards[x]) - cardCost(state, data.cards[y])).map((id) => {
               const card = data.cards[id];
               const err = buyError(state, data, 0, id);
               const active = me.magics.find((m) => m.cardId === id);
@@ -316,6 +319,9 @@ export function Battle({
                   key={id}
                   card={card}
                   data={data}
+                  level={me.cardLevels[id]}
+                  cost={cardCost(state, card)}
+                  uses={magicUses(state, data)}
                   stock={me.stock[id]}
                   disabled={canBuy && !!err}
                   badge={active ? `効果中 残${active.remaining}` : me.cooldowns[id] ? `再使用まで${me.cooldowns[id]}ターン` : owned > 0 ? `所持${owned}` : undefined}
@@ -361,12 +367,25 @@ export function Battle({
       {cardDetail && (
         <Modal title={data.cards[cardDetail].name} onClose={() => setCardDetail(null)}>
           <div className="card-detail">
-            <CardView card={data.cards[cardDetail]} data={data} />
+            <CardView
+              card={data.cards[cardDetail]}
+              data={data}
+              level={Math.max(me.cardLevels[cardDetail] ?? 0, cpu.cardLevels[cardDetail] ?? 0) || undefined}
+              cost={cardCost(state, data.cards[cardDetail])}
+              uses={magicUses(state, data)}
+            />
           </div>
         </Modal>
       )}
 
       {logOpen && <LogModal state={state} onClose={() => setLogOpen(false)} />}
+
+      {envOpen && state.environment && (
+        <Modal title={`環境効果：${state.environment.name}`} onClose={() => setEnvOpen(false)}>
+          <p>{state.environment.description}</p>
+          <p className="hint">両者に同じように適用されます。</p>
+        </Modal>
+      )}
 
       {menu && (
         <Menu
