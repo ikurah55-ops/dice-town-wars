@@ -19,10 +19,8 @@ export function Title({ onStory, onPractice, onOptions, storyProgress }: { onSto
       {/* 一枚絵の右側にロゴとメニュー */}
       <div className="title-panel">
         <div className="title-left">
-          <h1 className="logo">
-            ダイスタウン
-            <br />
-            <span>ウォーズ</span>
+          <h1 className="logo logo-img">
+            <img src={`${import.meta.env.BASE_URL}logo.webp`} alt="ダイス・ウォーズ" draggable={false} />
           </h1>
           <p className="tagline">出目で動く街を育てて、ボスを倒せ！</p>
         </div>
