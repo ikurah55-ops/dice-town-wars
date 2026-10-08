@@ -21,6 +21,14 @@ if (splash) {
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    // sw.js 自体も毎回確認し、アプリに戻ってきたときにも更新を確かめる
+    navigator.serviceWorker
+      .register('./sw.js', { updateViaCache: 'none' })
+      .then((reg) => {
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) void reg.update().catch(() => {});
+        });
+      })
+      .catch(() => {});
   });
 }
