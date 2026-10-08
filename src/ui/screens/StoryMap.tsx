@@ -20,7 +20,8 @@ const STEP_X = 104; // マスの間隔
 const PAD_X = 130; // 左端からステージ1まで（STARTの旗を置く）
 const TOP = 62; // 上の帯の下からマスを置く
 const BOTTOM = 46;
-const SEAM = 60; // 地方の境目でなじませる幅（次の地方が左端をぼかして重なる）
+const SEAM = 60;
+const MIN_GAP = 150; // 地方の境目をまたぐマスどうしの最小の間隔（間に飾りを1つ置ける広さ） // 地方の境目でなじませる幅（次の地方が左端をぼかして重なる）
 
 // src/assets/map/region1〜5.(jpg|png|webp) を置くと、その地方の背景が絵になる（無ければ仮の景色）
 const REGION_IMAGES: Record<string, string> = Object.fromEntries(
@@ -38,6 +39,8 @@ interface Region {
   width: number;
   img?: string;
   painted: boolean; // マスと道が絵に描き込まれている
+  imgWidth?: number; // 絵の幅（width との差は、絵の右端を鏡写しにして延ばした分）
+  mirrorMark?: { x: number; y: number }; // 鏡写しに映り込んだ最後のマスの位置（飾りで隠す）
 }
 
 /** 地方ごとに背景とマスの位置を決める。描き込みのある絵はその位置に、無ければ道を蛇行させて並べる */
@@ -57,8 +60,17 @@ function layoutMap(N: number, h: number) {
     if (img && lay && typeof lay !== 'string' && lay.nodes.length >= count) {
       const w = h * lay.aspect;
       for (let i = 0; i < count; i++) points.push({ x: left + lay.nodes[i][0] * w, y: lay.nodes[i][1] * h });
-      end = left + w;
-      regions.push({ k, left, width: w, img, painted: true });
+      // 次の地方も描き込みの絵なら、境目のマスどうしが近すぎないよう、この絵の右端を鏡写しにして延ばす
+      let ext = 0;
+      const next = PAINTED[`region${k + 2}`];
+      if (REGION_IMAGES[`region${k + 2}`] && next && typeof next !== 'string' && (k + 1) * 10 < N) {
+        const dist = (1 - lay.nodes[count - 1][0]) * w + next.nodes[0][0] * h * next.aspect - SEAM;
+        ext = Math.max(0, MIN_GAP - dist);
+      }
+      end = left + w + ext;
+      const last = lay.nodes[count - 1];
+      const mirrorMark = ext > 0 ? { x: left + w * (2 - last[0]), y: last[1] * h } : undefined;
+      regions.push({ k, left, width: w + ext, img, painted: true, imgWidth: w, mirrorMark });
     } else {
       const first = k === 0 ? PAD_X : end + STEP_X * 0.5;
       for (let i = 0; i < count; i++) {
@@ -121,7 +133,9 @@ export function StoryMap({
     const p = points[i];
     const q = points[i + 1];
     return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2, kind: k % 2 === 0 ? ('dice' as const) : ('chest' as const), skip: paintedOf(i) };
-  }).filter((d) => !d.skip);
+  })
+    .filter((d) => !d.skip)
+    .concat(regions.flatMap((r) => (r.mirrorMark ? [{ ...r.mirrorMark, kind: 'dice' as const, skip: false }] : [])));
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -149,7 +163,14 @@ export function StoryMap({
           {/* 地方ごとの背景 */}
           {regions.map((r) => (
             <div key={r.k} className={`map-region region-${r.k + 1} ${r.k > 0 ? 'has-seam' : ''}`} style={{ left: r.left, width: r.width }}>
-              {r.img ? <img src={r.img} alt="" draggable={false} /> : <RegionScenery k={r.k} w={r.width} h={h} />}
+              {r.img ? (
+                <>
+                  <img src={r.img} alt="" draggable={false} style={r.imgWidth ? { width: r.imgWidth } : undefined} />
+                  {r.imgWidth && r.width > r.imgWidth && <img className="map-mirror" src={r.img} alt="" draggable={false} style={{ left: r.imgWidth, width: r.imgWidth }} />}
+                </>
+              ) : (
+                <RegionScenery k={r.k} w={r.width} h={h} />
+              )}
             </div>
           ))}
           <svg className="map-path" width={width} height={h} aria-hidden="true">

@@ -1938,6 +1938,15 @@ button {
   height: 100%;
   object-fit: cover;
 }
+/* 絵の右端を鏡写しにして少し延ばす（境目のマスの間隔を空けるため） */
+.map-region img.map-mirror {
+  position: absolute;
+  top: 0;
+  transform: scaleX(-1);
+}
+.map-region img[style] {
+  flex: none;
+}
 /* 地方の境目をなじませる */
 .map-region.has-seam {
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 60px);
