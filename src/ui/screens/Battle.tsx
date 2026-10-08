@@ -5,6 +5,7 @@ import { applyAction, buyError, cardCost, coinTotal, createBattle, destroyTarget
 import type { Action, BattleState, Combatant, EnvironmentDef, Fx, GameData, PlayerState, Side } from '../../core/types';
 import { CardView, Die, MiniDie, Modal } from '../components';
 import { envLongBattleTurn } from '../../core/env';
+import { envImage } from '../art';
 import { sfx } from '../audio';
 import { groupFx, playFx } from '../fx';
 import { getSettings, hasSeen, markSeen } from '../settings';
@@ -503,6 +504,7 @@ export function Battle({
 
       {envOpen && state.environment && (
         <Modal title={`環境効果：${state.environment.name}`} onClose={() => setEnvOpen(false)}>
+          {envImage(state.environment.id) && <img className="env-modal-img" src={envImage(state.environment.id)} alt="" draggable={false} />}
           <p>{state.environment.description}</p>
           <p className="hint">両者に同じように適用されます。</p>
         </Modal>

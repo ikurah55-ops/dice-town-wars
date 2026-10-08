@@ -1360,6 +1360,17 @@ const CARD_IMAGES: Record<string, string> = Object.fromEntries(
   ).map(([path, url]) => [path.replace(/^.*\/|\.[a-z]+$/g, ''), url]),
 );
 
+// src/assets/envs/<環境効果ID>.(jpg|png|webp) を置くと、発表画面などにその絵が出る（無ければアイコン）
+const ENV_IMAGES: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob('../assets/envs/*.{jpg,jpeg,png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>,
+  ).map(([path, url]) => [path.replace(/^.*\/|\.[a-z]+$/g, ''), url]),
+);
+
+export function envImage(id: string): string | undefined {
+  return ENV_IMAGES[id];
+}
+
 export function CardArt({ id }: { id: string }) {
   const img = CARD_IMAGES[id];
   if (img) return <img className="card-img" src={img} alt="" decoding="async" draggable={false} />;

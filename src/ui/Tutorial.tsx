@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
 import type { EnvironmentDef } from '../core/types';
+import { envImage } from './art';
 import { sfx } from './audio';
 
 export interface TutStep {
@@ -94,10 +95,16 @@ export function EnvAnnounce({ env, firstTime, label = '今回の環境効果', o
       aria-label={`環境効果：${env.name}`}
     >
       <div className="env-announce-inner">
-        {/* イラストは後で差し替える（今は仮のアイコン） */}
-        <div className="env-art" aria-hidden="true">
-          <span>{env.icon ?? '🌐'}</span>
-        </div>
+        {/* イラストがあれば絵、なければ仮のアイコン */}
+        {envImage(env.id) ? (
+          <div className="env-art env-art-img" aria-hidden="true">
+            <img src={envImage(env.id)} alt="" draggable={false} />
+          </div>
+        ) : (
+          <div className="env-art" aria-hidden="true">
+            <span>{env.icon ?? '🌐'}</span>
+          </div>
+        )}
         <div className="env-texts">
           <div className="env-label">{label}</div>
           <div className="env-name">{env.name}</div>
