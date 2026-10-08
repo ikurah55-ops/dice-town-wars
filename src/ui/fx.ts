@@ -249,10 +249,8 @@ export async function playFx(ctx: FxContext, fx: Fx, onImpactRaw: () => void): P
       const to = hpPt(ctx, target);
       pulse(chip, 'fx-pulse-atk');
       popText(ctx, { x: from.x, y: from.y - 6 }, `${name} <b>${fx.amount}</b>`, 'fx-atk', clamp(15 + fx.amount * 0.35, 16, 30), 800);
-      const n = fast ? 1 : clamp(Math.round(fx.amount / 5), 1, 9);
-      fly(ctx, from, to, n, 'fx-fireball', 420, 55, 20, 26);
-      await sleep(420 + n * 55);
-      burst(ctx, to, 'fx-burst-atk', clamp(30 + fx.amount * 1.5, 36, 110), 360);
+      // カードごとの演出（なければ火の玉）
+      await (ATTACK_FX[fx.card] ?? fireballAttack)(ctx, from, to, fx.amount, fast);
       return;
     }
     case 'hit': {
@@ -570,3 +568,193 @@ async function storm(ctx: FxContext, fx: Extract<Fx, { kind: 'storm' }>, onImpac
   }
   await sleep(900);
 }
+
+// ---------- 攻撃カードごとの演出 ----------
+
+type AttackFx = (ctx: FxContext, from: Pt, to: Pt, amount: number, fast: boolean) => Promise<void>;
+
+/**
+ * from → to へ1つの飛び道具を飛ばす（2次ベジェ曲線）。
+ * rotate: 進行方向に向ける（要素は右向きに描く） / spin: 回転させる角度 / grow: 途中の拡大率（高く上がる感じ）
+ */
+function projectile(
+  ctx: FxContext,
+  cls: string,
+  from: Pt,
+  to: Pt,
+  dur: number,
+  opts: { delay?: number; arc?: number; bend?: number; rotate?: boolean; spin?: number; grow?: number; easing?: string } = {},
+): HTMLElement {
+  const { delay = 0, arc = 0, bend = 0, rotate = false, spin = 0, grow = 1, easing = 'linear' } = opts;
+  // 画面の外に出ないよう、曲がりの頂点は上端より下に。bend で横にふくらませる
+  const c = { x: (from.x + to.x) / 2 + bend, y: Math.max((from.y + to.y) / 2 - arc * 2, 10) };
+  const k: Keyframe[] = [];
+  const steps = 12;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const u = 1 - t;
+    const x = u * u * from.x + 2 * u * t * c.x + t * t * to.x;
+    const y = u * u * from.y + 2 * u * t * c.y + t * t * to.y;
+    const dx = 2 * u * (c.x - from.x) + 2 * t * (to.x - c.x);
+    const dy = 2 * u * (c.y - from.y) + 2 * t * (to.y - c.y);
+    const rot = rotate ? (Math.atan2(dy, dx) * 180) / Math.PI : spin * t;
+    const sc = 1 + (grow - 1) * Math.sin(Math.PI * t);
+    k.push({ transform: `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sc})`, opacity: i === 0 ? 0 : 1, offset: t });
+  }
+  const p = el(ctx, `fx-proj ${cls}`, { x: 0, y: 0 });
+  p.animate(k, { duration: dur, delay, easing, fill: 'both' }).finished.then(() => p.remove());
+  return p;
+}
+
+/** その場でふくらんで消える煙・土ぼこり */
+function puff(ctx: FxContext, p: Pt, cls: string, n: number, spread: number, ms = 700) {
+  for (let i = 0; i < n; i++) {
+    const d = el(ctx, `fx-proj ${cls}`, { x: 0, y: 0 });
+    const x = p.x + (Math.random() - 0.5) * spread;
+    const y = p.y + (Math.random() - 0.5) * spread * 0.5;
+    const dx = (Math.random() - 0.5) * spread;
+    const dy = -10 - Math.random() * 20;
+    d.animate(
+      [
+        { transform: `translate(${x}px, ${y}px) scale(0.4)`, opacity: 0.9 },
+        { transform: `translate(${x + dx}px, ${y + dy}px) scale(${1.6 + Math.random()})`, opacity: 0 },
+      ],
+      { duration: ms, delay: i * 30, easing: 'ease-out', fill: 'both' },
+    ).finished.then(() => d.remove());
+  }
+}
+
+/** 斬撃の線（中心 p、角度 deg） */
+function slash(ctx: FxContext, p: Pt, deg: number, delay = 0) {
+  const d = el(ctx, 'fx-proj fx-slash', { x: 0, y: 0 });
+  d.animate(
+    [
+      { transform: `translate(${p.x}px, ${p.y}px) rotate(${deg}deg) scaleX(0)`, opacity: 1 },
+      { transform: `translate(${p.x}px, ${p.y}px) rotate(${deg}deg) scaleX(1.1)`, opacity: 1, offset: 0.35 },
+      { transform: `translate(${p.x}px, ${p.y}px) rotate(${deg}deg) scaleX(1.2) scaleY(0.3)`, opacity: 0 },
+    ],
+    { duration: 380, delay, easing: 'ease-out', fill: 'both' },
+  ).finished.then(() => d.remove());
+}
+
+/** 広がる輪（衝撃波） */
+function ring(ctx: FxContext, p: Pt, cls: string, size: number, ms = 520) {
+  const r = el(ctx, `fx-proj ${cls}`, { x: 0, y: 0 });
+  r.animate(
+    [
+      { transform: `translate(${p.x}px, ${p.y}px) scale(0.2)`, opacity: 1 },
+      { transform: `translate(${p.x}px, ${p.y}px) scale(${size / 20})`, opacity: 0 },
+    ],
+    { duration: ms, easing: 'ease-out', fill: 'both' },
+  ).finished.then(() => r.remove());
+}
+
+const jitter = (p: Pt, r: number): Pt => ({ x: p.x + (Math.random() - 0.5) * r, y: p.y + (Math.random() - 0.5) * r * 0.5 });
+
+/** これまでの火の玉（カード固有の演出がないとき） */
+const fireballAttack: AttackFx = async (ctx, from, to, amount, fast) => {
+  const n = fast ? 1 : clamp(Math.round(amount / 5), 1, 9);
+  fly(ctx, from, to, n, 'fx-fireball', 420, 55, 20, 26);
+  await sleep(420 + n * 55);
+  burst(ctx, to, 'fx-burst-atk', clamp(30 + amount * 1.5, 36, 110), 360);
+};
+
+/** 兵舎：兵士たちの剣が突撃して、×字に斬りつける */
+const barracksAttack: AttackFx = async (ctx, from, to, _amount, fast) => {
+  const n = fast ? 1 : 3;
+  for (let i = 0; i < n; i++) projectile(ctx, 'fx-blade', jitter(from, 30), jitter(to, 24), 380, { delay: i * 70, rotate: true, arc: 10, easing: 'ease-in' });
+  await sleep(380 + (n - 1) * 70);
+  slash(ctx, to, -35);
+  slash(ctx, to, 35, 90);
+  burst(ctx, to, 'fx-burst-steel', 60, 320);
+  await sleep(200);
+};
+
+/** 投石機：大きな岩が高く弧を描いて落ち、土煙が上がる */
+const catapultAttack: AttackFx = async (ctx, from, to, _amount, fast) => {
+  const dur = fast ? 420 : 760;
+  projectile(ctx, 'fx-boulder', from, to, dur, { arc: 60, bend: from.x < 400 ? 140 : -140, spin: 540, grow: 2.1, easing: 'cubic-bezier(.3,.1,.7,1)' });
+  await sleep(dur);
+  burst(ctx, to, 'fx-burst-atk', 90, 420);
+  puff(ctx, to, 'fx-dust', fast ? 4 : 9, 90, 800);
+  for (let i = 0; i < (fast ? 0 : 7); i++) {
+    const d = el(ctx, 'fx-debris', to);
+    const dx = (Math.random() - 0.5) * 120;
+    d.animate(
+      [
+        { transform: 'translate(-50%, -50%)', opacity: 1 },
+        { transform: `translate(${dx}px, ${-20 - Math.random() * 30}px) rotate(${Math.random() * 360}deg)`, opacity: 1, offset: 0.5 },
+        { transform: `translate(${dx * 1.3}px, 30px) rotate(${Math.random() * 720}deg)`, opacity: 0 },
+      ],
+      { duration: 700, easing: 'ease-out' },
+    ).finished.then(() => d.remove());
+  }
+  shake(ctx, 6, 320);
+  await sleep(220);
+};
+
+/** 弓兵隊：矢の雨が弧を描いて降りそそぐ */
+const archersAttack: AttackFx = async (ctx, from, to, _amount, fast) => {
+  const n = fast ? 2 : 8;
+  for (let i = 0; i < n; i++) projectile(ctx, 'fx-arrow', jitter(from, 50), jitter(to, 70), 560, { delay: i * 40, arc: 60, bend: (i % 2 ? 1 : -1) * (30 + Math.random() * 50), rotate: true, easing: 'cubic-bezier(.35,0,.75,1)' });
+  await sleep(560);
+  for (let i = 0; i < Math.min(n, 5); i++) setTimeout(() => burst(ctx, jitter(to, 60), 'fx-burst-steel', 22, 240), i * 40);
+  await sleep(n * 40);
+};
+
+/** 大砲台：砲口が火を噴き、砲弾が飛んで大爆発 */
+const cannonAttack: AttackFx = async (ctx, from, to, _amount, fast) => {
+  burst(ctx, from, 'fx-burst-muzzle', 60, 260);
+  puff(ctx, from, 'fx-smoke', fast ? 3 : 7, 40, 900);
+  shake(ctx, 3, 160);
+  const dur = fast ? 240 : 320;
+  projectile(ctx, 'fx-cannonball', from, to, dur, { arc: 18, easing: 'ease-in' });
+  await sleep(dur);
+  burst(ctx, to, 'fx-burst-atk', 130, 480);
+  ring(ctx, to, 'fx-ring-fire', 140, 480);
+  puff(ctx, to, 'fx-smoke', fast ? 3 : 6, 70, 900);
+  flash(ctx, 'fx-flash-red', 0.25);
+  shake(ctx, 8, 360);
+  await sleep(240);
+};
+
+/** 槍兵隊：槍がまっすぐ投げ込まれて突き刺さる */
+const spearmenAttack: AttackFx = async (ctx, from, to, _amount, fast) => {
+  const n = fast ? 1 : 3;
+  for (let i = 0; i < n; i++) {
+    const t = { x: to.x + (i - (n - 1) / 2) * 26, y: to.y };
+    projectile(ctx, 'fx-spear', { x: from.x + (i - (n - 1) / 2) * 20, y: from.y }, t, 300, { delay: i * 80, rotate: true, easing: 'cubic-bezier(.5,0,1,1)' });
+    setTimeout(() => burst(ctx, t, 'fx-burst-steel', 34, 260), 300 + i * 80);
+  }
+  await sleep(300 + (n - 1) * 80 + 160);
+};
+
+/** 騎士団：黄金の槍を構えた突撃が駆け抜け、衝撃波が広がる */
+const knightsAttack: AttackFx = async (ctx, from, to, _amount, fast) => {
+  const dur = fast ? 260 : 380;
+  // 残像
+  for (let i = 0; i < (fast ? 1 : 4); i++) {
+    const g = projectile(ctx, 'fx-lance', from, to, dur, { delay: i * 35, rotate: true, easing: 'cubic-bezier(.6,0,.9,.6)' });
+    g.style.opacity = String(1 - i * 0.22);
+    if (i > 0) g.classList.add('fx-lance-ghost');
+  }
+  // 蹄の土ぼこり
+  for (let i = 1; i <= (fast ? 0 : 4); i++) {
+    const t = i / 5;
+    setTimeout(() => puff(ctx, { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t }, 'fx-dust', 2, 30, 500), dur * t);
+  }
+  await sleep(dur);
+  ring(ctx, to, 'fx-ring-gold', 150, 560);
+  burst(ctx, to, 'fx-burst-gold', 100, 420);
+  shake(ctx, 7, 340);
+  await sleep(220);
+};
+
+const ATTACK_FX: Record<string, AttackFx> = {
+  barracks: barracksAttack,
+  catapult: catapultAttack,
+  archers: archersAttack,
+  cannon: cannonAttack,
+  spearmen: spearmenAttack,
+  knights: knightsAttack,
+};

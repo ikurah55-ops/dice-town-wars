@@ -2553,3 +2553,123 @@ button {
   color: #062a24;
   box-shadow: 0 3px 0 #13584c;
 }
+
+/* ---------- 攻撃カードごとの演出 ---------- */
+.fx-proj {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+.fx-blade {
+  width: 42px;
+  height: 8px;
+  margin: -4px 0 0 -21px;
+  border-radius: 1px 4px 4px 1px;
+  background: linear-gradient(90deg, #6b3e1e 0 22%, #e0b54a 22% 30%, #dfe6ee 30%, #ffffff 85%, #c9d2dc);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+.fx-slash {
+  width: 92px;
+  height: 5px;
+  margin: -2.5px 0 0 -46px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #fff 30%, #fff 70%, transparent);
+  box-shadow: 0 0 10px #fff, 0 0 20px rgba(255, 80, 60, 0.9);
+}
+.fx-boulder {
+  width: 30px;
+  height: 27px;
+  margin: -13px 0 0 -15px;
+  border-radius: 45% 55% 50% 40% / 50% 40% 60% 50%;
+  background: radial-gradient(circle at 35% 30%, #c4bcb0, #756c61 55%, #3e3832);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset -3px -3px 0 rgba(0, 0, 0, 0.25);
+}
+.fx-dust {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 160, 112, 0.85), rgba(140, 104, 64, 0) 70%);
+}
+.fx-smoke {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(210, 210, 210, 0.85), rgba(120, 120, 120, 0) 70%);
+}
+.fx-arrow {
+  width: 38px;
+  height: 3px;
+  margin: -1.5px 0 0 -19px;
+  background: linear-gradient(90deg, #f2ead6 0 20%, #8a5a2a 20% 100%);
+}
+.fx-arrow::after {
+  content: '';
+  position: absolute;
+  right: -9px;
+  top: -4px;
+  border-left: 10px solid #e6ebf0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+.fx-spear {
+  width: 64px;
+  height: 6px;
+  margin: -3px 0 0 -32px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #5a3418, #a8743f);
+}
+.fx-spear::after {
+  content: '';
+  position: absolute;
+  right: -15px;
+  top: -5px;
+  border-left: 16px solid #e6ebf0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+}
+.fx-cannonball {
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #9aa0aa, #1c1e22 60%);
+  box-shadow: 0 0 12px 3px rgba(255, 120, 30, 0.75);
+}
+.fx-lance {
+  width: 100px;
+  height: 28px;
+  margin: -14px 0 0 -50px;
+  background: linear-gradient(180deg, #fff6d0, #f0c858 45%, #a87c22);
+  /* 持ち手・つば・円すいの穂先 */
+  clip-path: polygon(0 40%, 18% 40%, 20% 4%, 27% 26%, 100% 50%, 27% 74%, 20% 96%, 18% 60%, 0 60%);
+  filter: drop-shadow(0 0 6px rgba(255, 216, 119, 0.9));
+}
+.fx-lance-ghost {
+  filter: blur(2px);
+}
+.fx-ring-gold,
+.fx-ring-fire {
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  border: 3px solid #ffd877;
+  box-shadow: 0 0 12px #ffd877;
+}
+.fx-ring-fire {
+  border-color: #ff8a3c;
+  box-shadow: 0 0 12px #ff5a1f;
+}
+.fx-burst-steel {
+  background: radial-gradient(circle, #ffffff 0%, #dfe8f2 25%, rgba(180, 196, 214, 0.6) 50%, rgba(180, 196, 214, 0) 70%);
+}
+.fx-burst-muzzle {
+  background: radial-gradient(circle, #ffffff 0%, #fff1a8 25%, rgba(255, 150, 40, 0.8) 50%, rgba(255, 150, 40, 0) 70%);
+}
+.fx-burst-gold {
+  background: radial-gradient(circle, #fffbe0 0%, #ffd877 30%, rgba(201, 162, 74, 0.7) 55%, rgba(201, 162, 74, 0) 72%);
+}
