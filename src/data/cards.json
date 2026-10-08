@@ -86,7 +86,7 @@
   { "id": "odd_charm", "name": "奇数の護符", "category": "magic", "cost": 8, "timing": "own_roll",
     "effects": [{"type": "restrict_faces", "faces": [1,3,5]}],
     "story": {"unlockAfterStage": 35, "unlockExp": 8, "levelable": false, "levelCost": [], "bossTheme": null} },
-  { "id": "fickle_wind", "name": "気まぐれな風", "category": "magic", "cost": 1, "timing": "turn_end",
+  { "id": "fickle_wind", "name": "天変地異", "category": "magic", "cost": 1, "timing": "turn_end",
     "effects": [{"type": "change_environment"}],
     "story": {"unlockAfterStage": 15, "unlockExp": 5, "levelable": false, "levelCost": [], "bossTheme": null} },
   { "id": "ward", "name": "守護の結界", "category": "magic", "cost": 8, "timing": "opp_roll",

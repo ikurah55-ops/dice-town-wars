@@ -206,7 +206,7 @@ describe('新しい魔法', () => {
     applyAction(s, data, { type: 'roll' });
     expect(s.players[0].hp).toBe(180 - 8); // 15 → 8
   });
-  it('気まぐれな風：環境効果が別のものに変わり、自分の手番3回分のあと元に戻る', () => {
+  it('天変地異：環境効果が別のものに変わり、自分の手番3回分のあと元に戻る', () => {
     const s = mk('fixed6', 'fixed6', 'walls');
     applyAction(s, data, { type: 'roll' });
     s.players[0].coins = 20;

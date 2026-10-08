@@ -720,32 +720,27 @@ const ART: Record<string, ReactNode> = {
     </>
   ),
 
+  // 天変地異：嵐と雷、片側は吹雪・片側は日照り、大地が裂ける
   fickle_wind: (
     <>
-      <Bg fill="dt-sky-teal" />
-      <path d="M0 62 Q40 54 80 60 T120 58 V80 H0Z" fill="#1e4a3a" />
-      {[18, 30, 44].map((y, i) => (
-        <path
-          key={y}
-          d={`M${-10 + i * 6} ${y} Q30 ${y - 10} 60 ${y} T110 ${y - 2} q8 -6 2 -12 q-6 -4 -9 2`}
-          stroke="#e8fbff"
-          strokeWidth={2.4 - i * 0.5}
-          fill="none"
-          opacity={0.9 - i * 0.2}
-          strokeLinecap="round"
-        />
-      ))}
-      <line x1="86" y1="80" x2="86" y2="40" stroke="#2a1a0e" strokeWidth="1.6" />
-      <g transform="translate(86 40) rotate(-20)">
-        <path d="M-12 0 H12 L16 -3 L12 -6 H6 L2 -10 L-4 -6 H-12 L-14 -3Z" fill="url(#dt-gold)" stroke="#6a4208" strokeWidth="0.5" />
+      <Bg fill="dt-sky-storm" />
+      <path d="M0 0 H60 V80 H0Z" fill="#cfe6f5" opacity="0.18" />
+      <Glow x={100} y={18} r={26} c="fire" />
+      <circle cx="100" cy="18" r="7" fill="#ffd890" />
+      <g fill="#2a2430">
+        <circle cx="28" cy="14" r="12" />
+        <circle cx="44" cy="10" r="14" />
+        <circle cx="62" cy="16" r="11" />
+        <circle cx="14" cy="20" r="9" />
       </g>
-      {[
-        [24, 52, 20],
-        [48, 36, -30],
-        [70, 58, 50],
-        [38, 66, 80],
-      ].map(([x, y, a], i) => (
-        <path key={i} transform={`translate(${x} ${y}) rotate(${a})`} d="M0 -3 Q3 0 0 3 Q-3 0 0 -3Z" fill={i % 2 ? '#e0a040' : '#6aa84a'} />
+      <Glow x={46} y={44} r={22} c="white" />
+      <path d="M50 22 L42 40 L50 40 L40 60 L58 36 L50 36 L56 22Z" fill="#fffbe0" />
+      <Particles seed={41} n={22} box={[0, 24, 56, 70]} r={[0.5, 1.2]} fill="#ffffff" op={0.85} />
+      <path d="M0 64 Q40 58 80 62 T120 60 V80 H0Z" fill="#3a2a1e" />
+      <path d="M44 80 L50 70 L46 66 L54 62 L52 58 M54 62 L62 66 L60 72 L66 80" stroke="#ff7a2a" strokeWidth="2" fill="none" />
+      <Glow x={54} y={68} r={12} c="fire" />
+      {[18, 30].map((y, i) => (
+        <path key={y} d={`M${70 + i * 4} ${y + 20} q10 -8 20 0 t20 0`} stroke="#e8fbff" strokeWidth={1.6 - i * 0.4} fill="none" opacity={0.7} strokeLinecap="round" />
       ))}
       <Vig />
     </>
