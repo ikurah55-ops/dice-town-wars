@@ -16,12 +16,8 @@ import type { GameData } from '../../core/types';
 import { CardView, Modal } from '../components';
 import mapLayout from '../../data/map_layout.json';
 
-const STEP_X = 104; // マスの間隔
-const PAD_X = 130; // 左端からステージ1まで（STARTの旗を置く）
-const TOP = 62; // 上の帯の下からマスを置く
-const BOTTOM = 46;
-const SEAM = 60;
-const MIN_GAP = 150; // 地方の境目をまたぐマスどうしの最小の間隔（間に飾りを1つ置ける広さ） // 地方の境目でなじませる幅（次の地方が左端をぼかして重なる）
+const HEAD = 50; // 上の帯の高さ（絵はこの下に収める）
+const PER_PAGE = 10; // 1ページ（1地方）のステージ数
 
 // src/assets/map/region1〜5.(jpg|png|webp) を置くと、その地方の背景が絵になる（無ければ仮の景色）
 const REGION_IMAGES: Record<string, string> = Object.fromEntries(
@@ -33,58 +29,50 @@ const REGION_IMAGES: Record<string, string> = Object.fromEntries(
 /** 背景画にマスが描き込まれている地方：マスの位置（絵に対する割合）と絵の縦横比 */
 const PAINTED = mapLayout as unknown as Record<string, { aspect: number; nodes: [number, number][] } | string>;
 
-interface Region {
+interface Page {
   k: number;
-  left: number;
-  width: number;
+  first: number; // このページの最初のステージ
   img?: string;
-  painted: boolean; // マスと道が絵に描き込まれている
-  imgWidth?: number; // 絵の幅（width との差は、絵の右端を鏡写しにして延ばした分）
-  mirrorMark?: { x: number; y: number }; // 鏡写しに映り込んだ最後のマスの位置（飾りで隠す）
+  rect?: { x: number; y: number; w: number; h: number }; // 絵を置く位置（帯の下に、切らずに収める）
+  points: { x: number; y: number }[];
+  road?: string; // 絵がないときに描く道
 }
 
-/** 地方ごとに背景とマスの位置を決める。描き込みのある絵はその位置に、無ければ道を蛇行させて並べる */
-function layoutMap(N: number, h: number) {
-  const points: { x: number; y: number }[] = [];
-  const regions: Region[] = [];
-  const top = TOP + 34;
-  const bottom = h - BOTTOM - 20;
-  const mid = (top + bottom) / 2;
-  const amp = Math.max(20, (bottom - top) / 2);
-  let end = 0; // 前の地方の右端
-  for (let k = 0; k * 10 < N; k++) {
-    const count = Math.min(10, N - k * 10);
-    const img = REGION_IMAGES[`region${k + 1}`];
-    const lay = PAINTED[`region${k + 1}`];
-    const left = k === 0 ? 0 : end - SEAM;
-    if (img && lay && typeof lay !== 'string' && lay.nodes.length >= count) {
-      const w = h * lay.aspect;
-      for (let i = 0; i < count; i++) points.push({ x: left + lay.nodes[i][0] * w, y: lay.nodes[i][1] * h });
-      // 次の地方も描き込みの絵なら、境目のマスどうしが近すぎないよう、この絵の右端を鏡写しにして延ばす
-      let ext = 0;
-      const next = PAINTED[`region${k + 2}`];
-      if (REGION_IMAGES[`region${k + 2}`] && next && typeof next !== 'string' && (k + 1) * 10 < N) {
-        const dist = (1 - lay.nodes[count - 1][0]) * w + next.nodes[0][0] * h * next.aspect - SEAM;
-        ext = Math.max(0, MIN_GAP - dist);
-      }
-      end = left + w + ext;
-      const last = lay.nodes[count - 1];
-      const mirrorMark = ext > 0 ? { x: left + w * (2 - last[0]), y: last[1] * h } : undefined;
-      regions.push({ k, left, width: w + ext, img, painted: true, imgWidth: w, mirrorMark });
-    } else {
-      const first = k === 0 ? PAD_X : end + STEP_X * 0.5;
-      for (let i = 0; i < count; i++) {
-        const g = k * 10 + i;
-        points.push({ x: first + i * STEP_X, y: mid + Math.sin(g * 0.9 + 0.6) * amp * (g % 3 === 1 ? 0.7 : 1) });
-      }
-      end = first + (count - 1) * STEP_X + (k * 10 + count >= N ? PAD_X : STEP_X * 0.5);
-      regions.push({ k, left, width: end - left, img, painted: false });
+/** 1ページ（1地方）の配置。描き込みのある絵はそのマスの位置に、無ければ道を蛇行させて並べる */
+function layoutPage(k: number, N: number, w: number, h: number): Page {
+  const first = k * PER_PAGE + 1;
+  const count = Math.min(PER_PAGE, N - k * PER_PAGE);
+  const img = REGION_IMAGES[`region${k + 1}`];
+  const lay = PAINTED[`region${k + 1}`];
+  const areaH = h - HEAD;
+  if (img && lay && typeof lay !== 'string' && lay.nodes.length >= count) {
+    let iw = w;
+    let ih = iw / lay.aspect;
+    if (ih > areaH) {
+      ih = areaH;
+      iw = ih * lay.aspect;
     }
+    const rect = { x: (w - iw) / 2, y: HEAD + (areaH - ih) / 2, w: iw, h: ih };
+    return { k, first, img, rect, points: lay.nodes.slice(0, count).map(([nx, ny]) => ({ x: rect.x + nx * iw, y: rect.y + ny * ih })) };
   }
-  return { points, regions, width: end };
+  const top = HEAD + 50;
+  const bottom = h - 60;
+  const mid = (top + bottom) / 2;
+  const amp = Math.max(16, (bottom - top) / 2);
+  const step = (w * 0.86) / Math.max(1, count - 1);
+  const points = Array.from({ length: count }, (_, i) => ({ x: w * 0.07 + i * step, y: mid + Math.sin(i * 0.9 + 0.6) * amp * (i % 3 === 1 ? 0.7 : 1) }));
+  const road = points
+    .map((p, i) => {
+      if (i === 0) return `M${p.x} ${p.y}`;
+      const q = points[i - 1];
+      const cx = (q.x + p.x) / 2;
+      return `C${cx} ${q.y} ${cx} ${p.y} ${p.x} ${p.y}`;
+    })
+    .join(' ');
+  return { k, first, img, points, road };
 }
 
-/** すごろく風のマップ。横に長い道に沿って 1〜50 のマスが並ぶ。10ステージごとに地方が変わる */
+/** すごろく風のマップ。10ステージ（1地方）ごとに1ページで、左右にスワイプしてめくる */
 export function StoryMap({
   data,
   save,
@@ -103,124 +91,95 @@ export function StoryMap({
   onOptions: () => void;
 }) {
   const N = cfg.stageCount;
+  const P = Math.ceil(N / PER_PAGE);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [h, setH] = useState(320);
+  const [size, setSize] = useState({ w: 800, h: 375 });
   const [selected, setSelected] = useState<StageDef | null>(null);
   const current = Math.min(N, highestCleared(save) + 1);
   const unlockCount = unlockableCards(data, save).length;
-
-  const { points, regions, width } = useMemo(() => layoutMap(N, h), [N, h]);
-  const paintedOf = (i: number) => regions[Math.floor(i / 10)]?.painted ?? false;
-  // スタートの旗：最初の地方が描き込みの絵なら出さない（絵の中から始まる）
-  const start = paintedOf(0) ? null : { x: points[0].x - 84, y: points[0].y + 18 };
-  // 道：描き込みのある地方の中は絵の道を使い、それ以外をつなぐ
-  const seq = start ? [start, ...points] : points;
-  const off = start ? 1 : 0; // seq の添字 → ステージの添字
-  let path = '';
-  for (let j = 1; j < seq.length; j++) {
-    const ia = j - 1 - off;
-    const ib = j - off;
-    const inside = ia >= 0 && paintedOf(ia) && paintedOf(ib) && Math.floor(ia / 10) === Math.floor(ib / 10);
-    if (inside) continue;
-    const q = seq[j - 1];
-    const p = seq[j];
-    const cx = (q.x + p.x) / 2;
-    path += `M${q.x} ${q.y} C${cx} ${q.y} ${cx} ${p.y} ${p.x} ${p.y} `;
-  }
-  // 道の途中の飾り（サイコロと宝箱）：5マスごとの間に置く（描き込みのある地方には置かない）
-  const decos = Array.from({ length: Math.floor((N - 1) / 5) }, (_, k) => {
-    const i = k * 5 + 2; // ステージ i+1 と i+2 の間（大ボスの王冠と重ならない位置）
-    const p = points[i];
-    const q = points[i + 1];
-    return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2, kind: k % 2 === 0 ? ('dice' as const) : ('chest' as const), skip: paintedOf(i) };
-  })
-    .filter((d) => !d.skip)
-    .concat(regions.flatMap((r) => (r.mirrorMark ? [{ ...r.mirrorMark, kind: 'dice' as const, skip: false }] : [])));
+  const pageRef = useRef(Math.floor(((justOpened ?? current) - 1) / PER_PAGE)); // 今見ているページ
+  const pages = useMemo(() => Array.from({ length: P }, (_, k) => layoutPage(k, N, size.w, size.h)), [P, N, size]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const measure = () => setH(Math.max(240, el.clientHeight));
+    const measure = () => setSize({ w: Math.max(320, el.clientWidth), h: Math.max(240, el.clientHeight) });
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  // 現在のマスが中央に来るようにスクロール
+  // 大きさが変わったら（最初も）、今のページを表示し直す
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    const focus = justOpened ?? current;
-    el.scrollLeft = Math.max(0, points[focus - 1].x - el.clientWidth / 2);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [h]);
+    if (el) el.scrollLeft = pageRef.current * size.w;
+  }, [size]);
 
   return (
     <div className="screen story-map">
-      <div className="map-scroll" ref={scrollRef}>
-        <div className="map-world" style={{ width, height: h }}>
-          {/* 地方ごとの背景 */}
-          {regions.map((r) => (
-            <div key={r.k} className={`map-region region-${r.k + 1} ${r.k > 0 ? 'has-seam' : ''}`} style={{ left: r.left, width: r.width }}>
-              {r.img ? (
+      <div
+        className="map-scroll map-paged"
+        ref={scrollRef}
+        onScroll={(e) => {
+          pageRef.current = Math.round(e.currentTarget.scrollLeft / size.w);
+        }}
+      >
+        <div className="map-pages" style={{ width: size.w * P, height: size.h }}>
+          {pages.map((pg) => (
+            <section key={pg.k} className={`map-page region-${pg.k + 1}`} style={{ width: size.w, height: size.h }}>
+              {pg.img && pg.rect ? (
                 <>
-                  <img src={r.img} alt="" draggable={false} style={r.imgWidth ? { width: r.imgWidth } : undefined} />
-                  {r.imgWidth && r.width > r.imgWidth && <img className="map-mirror" src={r.img} alt="" draggable={false} style={{ left: r.imgWidth, width: r.imgWidth }} />}
+                  {/* 絵の外側には同じ絵をぼかして敷く */}
+                  <img className="map-page-bg" src={pg.img} alt="" draggable={false} />
+                  <img className="map-page-img" src={pg.img} alt="" draggable={false} style={{ left: pg.rect.x, top: pg.rect.y, width: pg.rect.w, height: pg.rect.h }} />
                 </>
               ) : (
-                <RegionScenery k={r.k} w={r.width} h={h} />
+                <>
+                  <div className="map-page-scenery">
+                    <RegionScenery k={pg.k} w={size.w} h={size.h} />
+                  </div>
+                  <svg className="map-path" width={size.w} height={size.h} aria-hidden="true">
+                    <path d={pg.road} className="road-shadow" />
+                    <path d={pg.road} className="road-edge" />
+                    <path d={pg.road} className="road" />
+                  </svg>
+                </>
               )}
-            </div>
+              {pg.points.map((p, i) => {
+                const s = pg.first + i;
+                const big = s % cfg.boss.bigBossEvery === 0;
+                const open = isStageOpen(save, s);
+                const done = isCleared(save, s);
+                const subs = save.subs[s];
+                const st = stageFor(data, cfg, save, s);
+                const cls = done ? 'is-done' : open ? 'is-open' : 'is-locked';
+                return (
+                  <button
+                    key={s}
+                    className={`node ${cls} ${big ? 'is-big' : ''} ${s === current && !done ? 'is-current' : ''} ${s === justOpened ? 'just-opened' : ''}`}
+                    style={{ left: p.x, top: p.y }}
+                    onClick={() => setSelected(st)}
+                    aria-label={`${stageLabel(st)}${done ? '（クリア済み）' : open ? '' : '（未開放）'}`}
+                  >
+                    <span className="node-disc">
+                      {open ? s : <LockIcon />}
+                      {big && <span className="node-crown">👑</span>}
+                      {st.envId && open && <span className="node-env" title={data.environments[st.envId].name} />}
+                    </span>
+                    <span className="node-type">{open ? st.typeName : '???'}</span>
+                    {open && (
+                      <span className="node-stars">
+                        <i className={subs?.halfHp ? 'on' : ''}>★</i>
+                        <i className={subs?.fastWin ? 'on' : ''}>★</i>
+                        <i className={subs?.card ? 'on' : ''}>★</i>
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </section>
           ))}
-          <svg className="map-path" width={width} height={h} aria-hidden="true">
-            <path d={path} className="road-shadow" />
-            <path d={path} className="road-edge" />
-            <path d={path} className="road" />
-          </svg>
-          {decos.map((d, i) => (
-            <span key={i} className={`map-deco deco-${d.kind}`} style={{ left: d.x, top: d.y }} aria-hidden="true">
-              {d.kind === 'dice' ? <DiceDeco /> : <ChestDeco />}
-            </span>
-          ))}
-          {start && (
-            <div className="map-start" style={{ left: start.x, top: start.y }} aria-hidden="true">
-              <span className="map-start-flag" />
-              <span className="map-start-disc">START</span>
-            </div>
-          )}
-          {points.map((p, i) => {
-            const s = i + 1;
-            const big = s % cfg.boss.bigBossEvery === 0;
-            const open = isStageOpen(save, s);
-            const done = isCleared(save, s);
-            const subs = save.subs[s];
-            const st = stageFor(data, cfg, save, s);
-            const cls = done ? 'is-done' : open ? 'is-open' : 'is-locked';
-            return (
-              <button
-                key={s}
-                className={`node ${cls} ${big ? 'is-big' : ''} ${s === current && !done ? 'is-current' : ''} ${s === justOpened ? 'just-opened' : ''}`}
-                style={{ left: p.x, top: p.y }}
-                onClick={() => setSelected(st)}
-                aria-label={`${stageLabel(st)}${done ? '（クリア済み）' : open ? '' : '（未開放）'}`}
-              >
-                <span className="node-disc">
-                  {open ? s : <LockIcon />}
-                  {big && <span className="node-crown">👑</span>}
-                  {st.envId && open && <span className="node-env" title={data.environments[st.envId].name} />}
-                </span>
-                <span className="node-type">{open ? st.typeName : '???'}</span>
-                {open && (
-                  <span className="node-stars">
-                    <i className={subs?.halfHp ? 'on' : ''}>★</i>
-                    <i className={subs?.fastWin ? 'on' : ''}>★</i>
-                    <i className={subs?.card ? 'on' : ''}>★</i>
-                  </span>
-                )}
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -278,35 +237,6 @@ function LockIcon() {
       <rect x="4.5" y="10" width="15" height="11" rx="2.5" fill="#d8d4cc" />
       <circle cx="12" cy="15" r="1.8" fill="#4a463e" />
       <rect x="11.2" y="15.5" width="1.6" height="3" fill="#4a463e" />
-    </svg>
-  );
-}
-
-function DiceDeco() {
-  return (
-    <svg viewBox="0 0 40 40" width="36" height="36">
-      <rect x="4" y="4" width="32" height="32" rx="7" fill="#fbf6ea" stroke="#b9ab90" strokeWidth="1.5" />
-      <path d="M8 36 L36 36 L36 8" fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="3" />
-      {[
-        [13, 13],
-        [27, 13],
-        [20, 20],
-        [13, 27],
-        [27, 27],
-      ].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="3.2" fill="#2a2420" />
-      ))}
-    </svg>
-  );
-}
-
-function ChestDeco() {
-  return (
-    <svg viewBox="0 0 44 36" width="40" height="33">
-      <path d="M4 14 Q4 4 22 4 Q40 4 40 14 Z" fill="#b8402a" stroke="#6a2414" strokeWidth="1.5" />
-      <rect x="4" y="14" width="36" height="18" rx="2" fill="#9a3420" stroke="#6a2414" strokeWidth="1.5" />
-      <path d="M4 14 H40 M10 4.8 V32 M34 4.8 V32" stroke="#e8b84a" strokeWidth="3" />
-      <rect x="18" y="11" width="8" height="9" rx="1.5" fill="#f2d27a" stroke="#8a6420" strokeWidth="1" />
     </svg>
   );
 }

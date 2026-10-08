@@ -1922,6 +1922,44 @@ button {
 .map-scroll::-webkit-scrollbar {
   display: none;
 }
+/* ページ式：1地方＝1ページ。左右にスワイプすると1ページずつ止まる */
+.map-scroll.map-paged {
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+}
+.map-pages {
+  display: flex;
+}
+.map-page {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  background: #1a120c;
+}
+.map-page-bg {
+  position: absolute;
+  inset: -30px;
+  width: calc(100% + 60px);
+  height: calc(100% + 60px);
+  object-fit: cover;
+  filter: blur(18px) brightness(0.55);
+}
+.map-page-img {
+  position: absolute;
+  display: block;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+}
+.map-page-scenery {
+  position: absolute;
+  inset: 0;
+}
+.map-page-scenery svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .map-world {
   position: relative;
 }
