@@ -44,7 +44,7 @@ export function CardView({
         <span className="card-name">{card.name}</span>
         {level !== undefined && card.category !== 'magic' && <span className="card-lv">Lv{level}</span>}
         {card.faces && (
-          <span className={`card-faces ${counter ? 'is-counter' : ''}`} title={counter ? '相手の出目で発動' : '自分の出目で発動'}>
+          <span className={`card-faces ${counter ? 'is-counter' : ''} ${card.faces.length >= 4 ? 'many' : ''}`} title={counter ? '相手の出目で発動' : '自分の出目で発動'}>
             {counter && <span className="faces-label">相手</span>}
             {card.faces.map((f) => (
               <MiniDie key={f} value={f} enemy={counter} />

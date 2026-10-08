@@ -2456,3 +2456,65 @@ button {
     font-size: 11px;
   }
 }
+
+/* 建設の表示（タップで進む）：画面全体に出し、カードは同じ幅で並べる */
+.built {
+  top: 0;
+  bottom: 0;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.built-me,
+.built-enemy {
+  top: 0;
+  bottom: 0;
+}
+.built-me {
+  background: radial-gradient(ellipse at center, rgba(40, 26, 10, 0.88), rgba(20, 12, 6, 0.94));
+}
+.built-enemy {
+  background: radial-gradient(ellipse at center, rgba(60, 14, 10, 0.88), rgba(30, 8, 6, 0.94));
+}
+.built-title {
+  font-size: 22px;
+}
+.built-cards {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 1), min(132px, calc((100vw - 48px) / var(--n, 1) - 8px)));
+  gap: 8px;
+  justify-content: center;
+}
+.built-card {
+  width: auto;
+}
+.built-card .card {
+  width: 100%;
+}
+.built-tap {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffe9b0;
+  animation: pulse 0.9s infinite alternate;
+}
+.built-card .mini-die {
+  width: 12px;
+  height: 12px;
+}
+.built-card .card-faces {
+  gap: 1px;
+}
+.built-card .card-name {
+  font-size: 12.5px;
+}
+
+/* 出目が4つ以上のカードはサイコロを小さくして名前の場所を確保 */
+.card-faces.many {
+  gap: 0;
+}
+.card .card-faces.many .mini-die {
+  width: 11px;
+  height: 11px;
+}

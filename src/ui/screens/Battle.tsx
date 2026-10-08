@@ -14,7 +14,6 @@ import { HowToPlay } from './Title';
 
 const ROLL_MS = 650;
 const SHOW_FACE_MS = 1000; // 出目を大きく見せる時間
-const BUILT_MS = 1300; // 建てた施設を見せる時間
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 type View = { hp: [number, number]; coins: [number, number] };
@@ -84,6 +83,7 @@ export function Battle({
   const [busy, setBusy] = useState(false); // 出目の演出中は操作を止める
   const [bigDie, setBigDie] = useState<{ face: number; enemy: boolean } | null>(null);
   const [built, setBuilt] = useState<{ side: Side; cards: [string, number][] } | null>(null);
+  const builtDone = useRef<(() => void) | null>(null); // 建設表示はタップで進む
   const [preview, setPreview] = useState<number | null>(null); // 演出中に盤面で光らせる出目
   const [view, setView] = useState<View | null>(null); // 演出中のHP・コイン表示
   const stageRef = useRef<HTMLDivElement>(null);
@@ -171,7 +171,9 @@ export function Battle({
         if (fx.kind === 'built') {
           setBuilt({ side: fx.side, cards: countCards(fx.cards) });
           sfx('build');
-          await sleep(BUILT_MS);
+          await new Promise<void>((res) => {
+            builtDone.current = res;
+          });
           if (!alive.current) return;
           setBuilt(null);
           await sleep(120);
@@ -346,15 +348,23 @@ export function Battle({
       )}
 
       {built && (
-        <div className={`built ${built.side === 1 ? 'built-enemy' : 'built-me'}`} aria-live="polite">
+        <div
+          className={`built ${built.side === 1 ? 'built-enemy' : 'built-me'}`}
+          aria-live="polite"
+          onClick={() => {
+            builtDone.current?.();
+            builtDone.current = null;
+          }}
+        >
           <div className="built-title">{state.players[built.side].name}が建設！</div>
-          <div className="built-cards">
+          <div className="built-cards" style={{ ['--n' as string]: built.cards.length }}>
             {built.cards.map(([id, n], i) => (
               <div key={id} className="built-card" style={{ animationDelay: `${i * 90}ms` }}>
                 <CardView card={data.cards[id]} data={data} badge={n > 1 ? `×${n}` : undefined} />
               </div>
             ))}
           </div>
+          <div className="built-tap">タップで進む</div>
         </div>
       )}
 
