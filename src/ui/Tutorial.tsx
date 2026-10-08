@@ -83,9 +83,25 @@ export function Tutorial({ steps, onDone }: { steps: TutStep[]; onDone: () => vo
 
 /** 環境効果の発表画面（タップで進む）。初めての効果なら詳しい説明も出す */
 export function EnvAnnounce({ env, firstTime, label = '今回の環境効果', onDone }: { env: EnvironmentDef; firstTime: boolean; label?: string; onDone: () => void }) {
+  const img = envImage(env.id);
+  const [portrait, setPortrait] = useState(false); // 縦長の絵は横に文字を並べる
+  const texts = (
+    <>
+      <div className="env-label">{label}</div>
+      <div className="env-name">{env.name}</div>
+      <div className="env-desc">{env.description}</div>
+      {firstTime && env.detail && (
+        <div className="env-detail">
+          <b>初めての環境効果</b>
+          <span>{env.detail}</span>
+        </div>
+      )}
+      <div className="env-tap">{label === '今回の環境効果' ? '画面をタップして戦闘開始' : '画面をタップして続ける'}</div>
+    </>
+  );
   return (
     <div
-      className="env-announce"
+      className={`env-announce ${img ? 'env-announce-pic' : ''} ${portrait ? 'is-portrait' : ''}`}
       style={{ ['--env' as string]: env.color ?? '#3a1a5e' }}
       onClick={() => {
         sfx('page');
@@ -94,30 +110,30 @@ export function EnvAnnounce({ env, firstTime, label = '今回の環境効果', o
       role="dialog"
       aria-label={`環境効果：${env.name}`}
     >
-      <div className="env-announce-inner">
-        {/* イラストがあれば絵、なければ仮のアイコン */}
-        {envImage(env.id) ? (
-          <div className="env-art env-art-img" aria-hidden="true">
-            <img src={envImage(env.id)} alt="" draggable={false} />
+      {img ? (
+        <>
+          {/* 絵を画面いっぱいに大きく。背景にも同じ絵をぼかして敷く */}
+          <img className="env-pic-bg" src={img} alt="" aria-hidden="true" draggable={false} />
+          <div className="env-pic-frame">
+            <img
+              className="env-pic"
+              src={img}
+              alt=""
+              draggable={false}
+              onLoad={(e) => setPortrait(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth)}
+            />
+            <div className="env-pic-caption">{texts}</div>
           </div>
-        ) : (
+        </>
+      ) : (
+        <div className="env-announce-inner">
+          {/* イラストがなければ仮のアイコン */}
           <div className="env-art" aria-hidden="true">
             <span>{env.icon ?? '🌐'}</span>
           </div>
-        )}
-        <div className="env-texts">
-          <div className="env-label">{label}</div>
-          <div className="env-name">{env.name}</div>
-          <div className="env-desc">{env.description}</div>
-          {firstTime && env.detail && (
-            <div className="env-detail">
-              <b>初めての環境効果</b>
-              <span>{env.detail}</span>
-            </div>
-          )}
-          <div className="env-tap">{label === '今回の環境効果' ? '画面をタップして戦闘開始' : '画面をタップして続ける'}</div>
+          <div className="env-texts">{texts}</div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

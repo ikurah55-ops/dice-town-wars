@@ -2218,28 +2218,90 @@ button {
   box-shadow: 0 0 40px rgba(255, 233, 176, 0.35), inset 0 0 30px rgba(0, 0, 0, 0.3);
   animation: envArt 0.7s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
-/* 環境効果のイラスト（横長・縦長どちらも切らずに全体を出す） */
-.env-art.env-art-img {
-  width: auto;
-  height: auto;
-  border-radius: 14px;
+/* 環境効果のイラスト：発表画面では絵を主役に大きく */
+.env-announce-pic {
   overflow: hidden;
   background: #000;
-  font-size: 0;
 }
-.env-art-img img {
+.env-pic-bg {
+  position: absolute;
+  inset: -40px;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+  object-fit: cover;
+  filter: blur(24px) brightness(0.45) saturate(1.2);
+}
+.env-pic-frame {
+  position: relative;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 20px);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 233, 176, 0.7);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 40px rgba(255, 233, 176, 0.25);
+  animation: envPic 0.6s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+.env-pic {
   display: block;
+  max-width: calc(100vw - 28px);
+  max-height: calc(100dvh - 24px);
   width: auto;
   height: auto;
-  max-width: 300px;
-  max-height: min(240px, calc(100dvh - 60px));
+}
+/* 文字は絵の下側に重ねる（下に向かって暗くして読みやすく） */
+.env-pic-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 40px 22px 14px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55) 30%, rgba(0, 0, 0, 0.85));
+}
+.env-pic-caption .env-name {
+  font-size: 34px;
+}
+.env-pic-caption .env-desc {
+  font-size: 16px;
+}
+.env-pic-caption .env-detail {
+  font-size: 12.5px;
+  padding: 6px 10px;
+}
+.env-pic-caption .env-tap {
+  margin-top: 4px;
+}
+/* 縦長の絵：絵を左、文字を右に並べる */
+.env-announce-pic.is-portrait .env-pic-frame {
+  display: flex;
+  max-width: min(760px, calc(100% - 24px));
+  background: rgba(0, 0, 0, 0.55);
+}
+.env-announce-pic.is-portrait .env-pic {
+  flex: none;
+  max-width: 45vw;
+}
+.env-announce-pic.is-portrait .env-pic-caption {
+  position: static;
+  justify-content: center;
+  padding: 16px 22px;
+  background: none;
+  min-width: 0;
+}
+@keyframes envPic {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
 }
 .env-modal-img {
   display: block;
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 150px;
+  max-height: min(220px, calc(100dvh - 220px)); /* 閉じるボタンまで1画面に収める */
   margin: 0 auto 8px;
   border-radius: 10px;
 }
