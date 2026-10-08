@@ -5,15 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#2b1d14" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ダイスタウン" />
     <title>ダイスタウン・ウォーズ</title>
+    <link rel="preload" as="image" href="./title.jpg" />
+    <style>
+      /* 起動画面：アプリの読み込み中に出し、読み込み後にフェードで消す（main.tsx） */
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #1a120c url(./title.jpg) center / cover no-repeat;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: 0 max(28px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) 0;
+        transition: opacity 0.6s ease;
+        font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+      }
+      #splash::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 45%, rgba(10, 6, 3, 0.55) 80%, rgba(10, 6, 3, 0.7));
+      }
+      #splash .splash-logo {
+        position: relative;
+        font-size: 34px;
+        font-weight: 900;
+        line-height: 1.15;
+        text-align: right;
+        color: #f6ead2;
+        text-shadow: 0 3px 0 #5a3a1e, 0 6px 16px rgba(0, 0, 0, 0.7);
+      }
+      #splash .splash-logo span {
+        color: #e8b84a;
+        font-size: 42px;
+      }
+      #splash .splash-load {
+        position: relative;
+        margin-top: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #ffe9b0;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+        animation: splashPulse 0.9s infinite alternate;
+      }
+      @keyframes splashPulse {
+        from {
+          opacity: 0.4;
+        }
+      }
+      #splash.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body>
+    <div id="splash" aria-hidden="true">
+      <div class="splash-logo">ダイスタウン<br /><span>ウォーズ</span></div>
+      <div class="splash-load">読み込み中…</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

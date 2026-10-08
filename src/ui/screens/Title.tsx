@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Die, Modal } from '../components';
+import { Modal } from '../components';
 
 /** スマホでは全画面＋横向き固定を試みる（対応していない環境では何もしない） */
 async function tryLandscape() {
@@ -15,49 +15,48 @@ async function tryLandscape() {
 export function Title({ onStory, onPractice, onOptions, storyProgress }: { onStory: () => void; onPractice: () => void; onOptions: () => void; storyProgress: number }) {
   const [help, setHelp] = useState(false);
   return (
-    <div className="screen title-screen">
-      <div className="title-left">
-        <div className="title-dice">
-          <Die value={5} size={60} />
-          <Die value={3} size={60} enemy />
+    <div className="screen title-screen" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}title.jpg)` }}>
+      {/* 一枚絵の右側にロゴとメニュー */}
+      <div className="title-panel">
+        <div className="title-left">
+          <h1 className="logo">
+            ダイスタウン
+            <br />
+            <span>ウォーズ</span>
+          </h1>
+          <p className="tagline">出目で動く街を育てて、ボスを倒せ！</p>
         </div>
-        <h1 className="logo">
-          ダイスタウン
-          <br />
-          <span>ウォーズ</span>
-        </h1>
-        <p className="tagline">出目で動く街を育てて、ボスを倒せ！</p>
-      </div>
-      <div className="title-buttons">
-        <button
-          className="btn btn-primary btn-big mode-btn"
-          onClick={() => {
-            void tryLandscape();
-            onStory();
-          }}
-        >
-          ストーリーモード
-          <small>{storyProgress > 0 ? `ステージ${storyProgress}までクリア` : '全50ステージ'}</small>
-        </button>
-        <button
-          className="btn btn-ghost mode-btn"
-          onClick={() => {
-            void tryLandscape();
-            onPractice();
-          }}
-        >
-          練習モード
-          <small>全カードを使って自由に対戦</small>
-        </button>
-        <div className="btn-row">
-          <button className="btn btn-ghost" onClick={() => setHelp(true)}>
-            遊び方
+        <div className="title-buttons">
+          <button
+            className="btn btn-primary btn-big mode-btn"
+            onClick={() => {
+              void tryLandscape();
+              onStory();
+            }}
+          >
+            ストーリーモード
+            <small>{storyProgress > 0 ? `ステージ${storyProgress}までクリア` : '全50ステージ'}</small>
           </button>
-          <button className="btn btn-ghost" onClick={onOptions}>
-            オプション
+          <button
+            className="btn btn-ghost mode-btn"
+            onClick={() => {
+              void tryLandscape();
+              onPractice();
+            }}
+          >
+            練習モード
+            <small>全カードを使って自由に対戦</small>
           </button>
+          <div className="btn-row">
+            <button className="btn btn-ghost" onClick={() => setHelp(true)}>
+              遊び方
+            </button>
+            <button className="btn btn-ghost" onClick={onOptions}>
+              オプション
+            </button>
+          </div>
+          <p className="version">試作版 v0.2</p>
         </div>
-        <p className="version">試作版 v0.2</p>
       </div>
       {help && <HowToPlay onClose={() => setHelp(false)} />}
     </div>
