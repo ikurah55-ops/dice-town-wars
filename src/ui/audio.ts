@@ -229,84 +229,221 @@ let timer: number | null = null;
 let nextTime = 0;
 let step = 0;
 
-// ニ短調ドリア風の進行：Dm - C - B♭ - C（各1小節、8分音符×8）
-const CHORDS = [
-  [50, 53, 57, 62],
-  [48, 52, 55, 60],
-  [46, 50, 53, 58],
-  [48, 52, 55, 60],
-];
-const MELODY = [
-  [74, null, 72, 69, 72, null, 74, 77],
-  [76, null, 72, 67, 69, null, 72, null],
-  [74, null, 70, 65, 70, 72, 74, null],
-  [72, null, 76, null, 74, 72, 69, null],
-];
+// ---- 楽器（オーケストラ風の合成音。残響をかけて広がりを出す） ----
 
-function scheduleStep(t: number, track: BgmTrack) {
-  if (!ctx || !bgmGain) return;
-  const bar = Math.floor(step / 8) % 4;
-  const beat = step % 8;
-  const chord = CHORDS[bar];
-  const eighth = track === 'battle' ? 60 / 116 / 2 : 60 / 84 / 2;
-  // ベース
-  if (beat % 4 === 0) toneAt(t, NOTE(chord[0] - 12), eighth * 3.5, 'triangle', 0.22);
-  // アルペジオ
-  toneAt(t, NOTE(chord[beat % 4] + (beat >= 4 ? 12 : 0)), eighth * 0.9, 'triangle', track === 'battle' ? 0.07 : 0.06);
-  // メロディ（2周目以降）
-  const m = MELODY[bar][beat];
-  if (m && Math.floor(step / 32) % 2 === 1) toneAt(t, NOTE(m), eighth * 1.6, 'square', 0.035);
-  // 戦闘はリズムを足す
-  if (track === 'battle') {
-    if (beat === 0 || beat === 4) drumAt(t, 'kick');
-    if (beat === 2 || beat === 6) drumAt(t, 'snare');
-    drumAt(t, 'hat');
+let bus: GainNode | null = null; // BGMの楽器はここに集めて、そのまま＋残響で bgmGain へ
+
+function bgmBus(): GainNode | null {
+  if (!ctx || !bgmGain) return null;
+  if (bus) return bus;
+  bus = ctx.createGain();
+  bus.connect(bgmGain);
+  // 残響：減衰するノイズを畳み込んで、広いホールのような響きに
+  const len = Math.floor(ctx.sampleRate * 2.4);
+  const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
   }
-  step++;
-  return eighth;
+  const conv = ctx.createConvolver();
+  conv.buffer = ir;
+  const send = ctx.createGain();
+  send.gain.value = 0.32;
+  bus.connect(send).connect(conv).connect(bgmGain);
+  return bus;
 }
 
-function toneAt(t: number, freq: number, dur: number, type: OscillatorType, vol: number) {
-  if (!ctx || !bgmGain) return;
+/** のこぎり波＋ローパスの持続音（弦・金管・ベースに使う） */
+function synth(
+  t: number,
+  midi: number,
+  dur: number,
+  o: { vol: number; attack?: number; release?: number; cutoff?: number; peak?: number; detune?: number; type?: OscillatorType },
+) {
+  const out = bgmBus();
+  if (!ctx || !out) return;
+  const { vol, attack = 0.01, release = 0.15, cutoff = 1800, peak, detune = 0, type = 'sawtooth' } = o;
+  const f = ctx.createBiquadFilter();
+  f.type = 'lowpass';
+  f.Q.value = 0.7;
+  if (peak) {
+    // 金管：吹いた瞬間に明るくなって落ち着く
+    f.frequency.setValueAtTime(cutoff * 0.4, t);
+    f.frequency.linearRampToValueAtTime(peak, t + attack + 0.03);
+    f.frequency.exponentialRampToValueAtTime(cutoff, t + attack + 0.25);
+  } else f.frequency.value = cutoff;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + attack);
+  g.gain.setValueAtTime(vol, t + Math.max(attack, dur - release));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + release);
+  f.connect(g).connect(out);
+  for (const cents of detune ? [-detune, detune] : [0]) {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = NOTE(midi);
+    osc.detune.value = cents;
+    osc.connect(f);
+    osc.start(t);
+    osc.stop(t + dur + release + 0.05);
+  }
+}
+
+/** ティンパニ・和太鼓：音程が少し下がる低い打音＋皮を打つノイズ */
+function drum(t: number, freq: number, vol: number, decay: number) {
+  const out = bgmBus();
+  if (!ctx || !out || !noiseBuf) return;
   const o = ctx.createOscillator();
   const g = ctx.createGain();
-  o.type = type;
-  o.frequency.value = freq;
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g).connect(bgmGain);
+  o.type = 'sine';
+  o.frequency.setValueAtTime(freq * 1.5, t);
+  o.frequency.exponentialRampToValueAtTime(freq, t + 0.06);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  o.connect(g).connect(out);
   o.start(t);
-  o.stop(t + dur + 0.05);
-}
-
-function drumAt(t: number, kind: 'kick' | 'snare' | 'hat') {
-  if (!ctx || !bgmGain || !noiseBuf) return;
-  if (kind === 'kick') {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.frequency.setValueAtTime(120, t);
-    o.frequency.exponentialRampToValueAtTime(40, t + 0.15);
-    g.gain.setValueAtTime(0.35, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-    o.connect(g).connect(bgmGain);
-    o.start(t);
-    o.stop(t + 0.2);
-    return;
-  }
+  o.stop(t + decay + 0.05);
   const src = ctx.createBufferSource();
   src.buffer = noiseBuf;
   const f = ctx.createBiquadFilter();
-  f.type = kind === 'hat' ? 'highpass' : 'bandpass';
-  f.frequency.value = kind === 'hat' ? 7000 : 1800;
-  const g = ctx.createGain();
-  const v = kind === 'hat' ? 0.04 : 0.12;
-  const d = kind === 'hat' ? 0.04 : 0.12;
-  g.gain.setValueAtTime(v, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-  src.connect(f).connect(g).connect(bgmGain);
+  f.type = 'lowpass';
+  f.frequency.value = 900;
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(vol * 0.5, t);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+  src.connect(f).connect(ng).connect(out);
   src.start(t, Math.random() * 0.5);
-  src.stop(t + d + 0.02);
+  src.stop(t + 0.1);
+}
+
+/** スネア・シンバル（ノイズ） */
+function hiss(t: number, kind: 'snare' | 'swell', vol: number, dur: number) {
+  const out = bgmBus();
+  if (!ctx || !out || !noiseBuf) return;
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuf;
+  src.loop = true;
+  const f = ctx.createBiquadFilter();
+  f.type = kind === 'snare' ? 'bandpass' : 'highpass';
+  f.frequency.value = kind === 'snare' ? 2200 : 5000;
+  const g = ctx.createGain();
+  if (kind === 'snare') {
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  } else {
+    // シンバルのクレッシェンド（次の頭に向かって盛り上げる）
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.6);
+  }
+  src.connect(f).connect(g).connect(out);
+  src.start(t, Math.random() * 0.5);
+  src.stop(t + dur + 0.7);
+}
+
+// ---- 曲 ----
+// 和音は [ベースの音, 中音域の4音]（MIDI番号）
+
+const Dm = [38, [50, 53, 57, 62]] as const;
+const Bb = [34, [46, 50, 53, 58]] as const;
+const F_ = [41, [48, 53, 57, 60]] as const;
+const C_ = [36, [48, 52, 55, 60]] as const;
+const Gm = [43, [50, 55, 58, 62]] as const;
+const A_ = [33, [49, 52, 57, 61]] as const; // 属和音（緊張して主和音に戻りたくなる）
+
+type Chord = readonly [number, readonly number[]];
+type Mel = (number | null)[];
+
+/** メロディの音の長さ：次の音（またはその小節の終わり）まで */
+function noteLen(bar: Mel, i: number): number {
+  let n = 1;
+  while (i + n < bar.length && bar[i + n] === null) n++;
+  return n;
+}
+
+// メニュー：ゆったり壮大に（ニ短調、76 BPM、8分音符×8で1小節、8小節）
+const MENU_CHORDS: Chord[] = [Dm, Bb, F_, C_, Dm, Bb, Gm, A_];
+const MENU_MEL: Mel[] = [
+  [62, null, null, 65, 69, null, null, null],
+  [70, null, 69, null, 65, null, null, null],
+  [72, null, null, 69, 65, null, 64, 65],
+  [67, null, null, null, 64, null, null, null],
+  [62, null, null, 65, 69, null, 74, null],
+  [74, null, 72, 70, 69, null, 65, null],
+  [67, null, 70, null, 74, null, 72, 70],
+  [69, null, null, null, 73, null, null, null],
+];
+
+function menuStep(t: number, s: number): number {
+  const e = 60 / 76 / 2; // 8分音符
+  const bar = Math.floor(s / 8) % 8;
+  const beat = s % 8;
+  const loop = Math.floor(s / 64);
+  const [root, mid] = MENU_CHORDS[bar];
+  if (beat === 0) {
+    // 弦の和音（ゆっくり立ち上がる）と低音
+    for (const n of mid) synth(t, n, e * 8, { vol: 0.028, attack: 0.5, release: 0.6, cutoff: 1500, detune: 7 });
+    synth(t, root, e * 8, { vol: 0.07, attack: 0.08, release: 0.4, cutoff: 380 });
+    drum(t, 55, bar === 0 ? 0.32 : 0.18, 1.1);
+  }
+  // チェロの刻み（静かに前へ進む感じ）
+  synth(t, root + 12 + (beat % 2 ? 12 : 0), e * 0.8, { vol: 0.032, attack: 0.01, release: 0.08, cutoff: 900 });
+  // 最後の小節：ティンパニのロールとシンバルで次の頭へ
+  if (bar === 7 && beat >= 4) drum(t, 55, 0.12 + (beat - 4) * 0.06, 0.5);
+  if (bar === 7 && beat === 4) hiss(t, 'swell', 0.05, e * 4);
+  // ホルンの旋律（2周目から、1周おき）
+  const m = MENU_MEL[bar][beat];
+  if (loop % 2 === 1 && m !== null) synth(t, m, e * noteLen(MENU_MEL[bar], beat) * 0.95, { vol: 0.05, attack: 0.06, release: 0.25, cutoff: 1100, peak: 2600, detune: 5 });
+  return e;
+}
+
+// 戦闘：速く緊張感のある曲（ニ短調、138 BPM、16分音符×16で1小節、8小節）
+const BATTLE_CHORDS: Chord[] = [Dm, Dm, Bb, A_, Dm, C_, Bb, A_];
+const BATTLE_MEL: Mel[] = [
+  [74, null, 73, 74, 77, null, 76, 74],
+  [72, null, 74, null, 69, null, null, null],
+  [70, null, 72, 74, 77, null, 74, null],
+  [73, null, null, 74, 73, null, 69, null],
+  [74, null, 76, 77, 81, null, 79, 77],
+  [76, null, 74, 72, 72, null, null, null],
+  [74, null, 72, 70, 69, null, 70, null],
+  [69, null, null, null, 68, null, 69, null],
+];
+const OSTINATO = [0, 0, 2, 0, 1, 0, 2, 3, 0, 0, 2, 0, 1, 2, 3, 2]; // 16分の刻み（和音の何番目の音か）
+const TAIKO = [0, 3, 6, 8, 11, 14]; // 3+3+2 の太鼓
+
+function battleStep(t: number, s: number): number {
+  const sx = 60 / 138 / 4; // 16分音符
+  const bar = Math.floor(s / 16) % 8;
+  const i = s % 16;
+  const loop = Math.floor(s / 128);
+  const [root, mid] = BATTLE_CHORDS[bar];
+  const tense = bar === 3 || bar === 7; // 属和音の小節
+  // 弦の16分の刻み
+  synth(t, mid[OSTINATO[i]] + 12, sx * 0.7, { vol: 0.03, attack: 0.005, release: 0.05, cutoff: 2400 });
+  // 低音：8分で押し出す
+  if (i % 2 === 0) synth(t, root + (i % 8 === 4 ? 12 : 0), sx * 1.6, { vol: 0.06, attack: 0.005, release: 0.06, cutoff: 500 });
+  // 和太鼓とスネア
+  if (TAIKO.includes(i)) drum(t, i === 0 ? 50 : 70, i === 0 ? 0.36 : 0.22, 0.35);
+  if (i === 4 || i === 12) hiss(t, 'snare', 0.1, 0.12);
+  if (bar === 7 && i >= 8) hiss(t, 'snare', 0.04 + (i - 8) * 0.012, 0.08); // 小節の終わりのロール
+  if (bar === 7 && i === 8) hiss(t, 'swell', 0.05, sx * 8);
+  // 金管：シンコペーションの和音の一撃。属和音の小節は長く伸ばして緊張させる
+  if (tense && i === 0) for (const n of mid.slice(0, 3)) synth(t, n, sx * 14, { vol: 0.035, attack: 0.15, release: 0.3, cutoff: 1300, peak: 2800, detune: 6 });
+  else if (i === 0 || i === 6) for (const n of mid.slice(0, 3)) synth(t, n, sx * 1.5, { vol: 0.04, attack: 0.01, release: 0.1, cutoff: 1200, peak: 3000, detune: 6 });
+  // 旋律（2周目から、1周おき。8分音符単位）
+  if (i % 2 === 0 && loop % 2 === 1) {
+    const mel = BATTLE_MEL[bar];
+    const m = mel[i / 2];
+    if (m !== null) synth(t, m, sx * 2 * noteLen(mel, i / 2) * 0.9, { vol: 0.045, attack: 0.02, release: 0.12, cutoff: 2600, detune: 8 });
+  }
+  return sx;
+}
+
+function scheduleStep(t: number, track: BgmTrack): number {
+  const d = track === 'battle' ? battleStep(t, step) : menuStep(t, step);
+  step++;
+  return d;
 }
 
 function startBgm(track: BgmTrack | null) {
@@ -322,8 +459,7 @@ function startBgm(track: BgmTrack | null) {
   timer = window.setInterval(() => {
     if (!ctx) return;
     while (nextTime < ctx.currentTime + 0.25) {
-      const d = scheduleStep(nextTime, track);
-      nextTime += d ?? 0.3;
+      nextTime += scheduleStep(nextTime, track);
     }
   }, 80);
 }
