@@ -72,6 +72,7 @@ export function createBattle(
     winner: null,
     longBattleHappened: false,
     environment: opts.environment ?? null,
+    baseEnvironment: opts.environment ?? null,
     log: [],
     quiet: !!opts.quiet,
     nextUid: 1,
@@ -299,6 +300,11 @@ export function bannedFaces(state: BattleState, data: GameData, side: Side): num
   for (const { m, e } of magicsWith(state.players[side], data, 'ban_face')) {
     if ((e as { target: string }).target === 'self' && m.face !== undefined) out.push(m.face);
   }
+  // 「この目だけになる」魔法：それ以外の目を出なくする
+  for (const { e } of magicsWith(state.players[side], data, 'restrict_faces')) {
+    const allowed = (e as { faces: number[] }).faces;
+    for (let f = 1; f <= 6; f++) if (!allowed.includes(f)) out.push(f);
+  }
   for (const { m, e } of magicsWith(state.players[opp(side)], data, 'ban_face')) {
     if ((e as { target: string }).target === 'opponent' && m.face !== undefined) out.push(m.face);
   }
@@ -357,6 +363,8 @@ function resolveRoll(state: BattleState, data: GameData) {
   let atkMult = 1;
   for (const { e } of magicsWith(me, data, 'economy_multiplier')) econMult *= (e as { amount: number }).amount;
   for (const { e } of magicsWith(me, data, 'attack_multiplier')) atkMult *= (e as { amount: number }).amount;
+
+  const halveCard = magicsWith(them, data, 'halve_attack_damage')[0]?.card ?? null;
 
   // サイコロ系の魔法の残り回数を減らす（自分の own_roll、相手の opp_roll）
   for (const m of [...me.magics]) if (data.cards[m.cardId].timing === 'own_roll') consume(me, m, data);
@@ -423,6 +431,11 @@ function resolveRoll(state: BattleState, data: GameData) {
       }
     }
   }
+  if (attackTotal > 0 && halveCard) {
+    const half = Math.ceil(attackTotal / 2);
+    log(state, other, `${halveCard.name}：攻撃ダメージを半減（${attackTotal}→${half}）`, 'magic');
+    attackTotal = half;
+  }
   if (attackTotal > 0) {
     const reduced = Math.min(attackTotal, state.damageShield);
     const dealt = attackTotal - reduced;
@@ -474,6 +487,7 @@ function doBuy(state: BattleState, data: GameData, cardId: string, face?: number
   const m: ActiveMagic = { cardId, remaining: magicUses(state, data), face: needsFace ? face : undefined };
   me.magics.push(m);
   if (needsFace) log(state, side, `${card.name}：${face}の目を指定`, 'magic');
+  if (card.effects.some((e) => e.type === 'change_environment')) changeEnvironment(state, data, side, card);
 
   if (card.timing === 'turn_start') {
     // 購入した瞬間に1回目
@@ -523,6 +537,26 @@ function doDestroy(state: BattleState, data: GameData, cardId: string | null) {
   else state.phase = 'buy';
 }
 
+// ---------- 環境効果を変える魔法 ----------
+
+/** 今とは違う環境効果にランダムで変える */
+function changeEnvironment(state: BattleState, data: GameData, side: Side, card: CardDef) {
+  const list = data.environmentList.filter((e) => e.id !== state.environment?.id);
+  if (list.length === 0) return;
+  const env = list[Math.floor(rand(state) * list.length)];
+  state.environment = env;
+  log(state, side, `${card.name}：環境効果が「${env.name}」に変わった（${env.description}）`, 'magic', { kind: 'env', side, envId: env.id, card: card.id });
+}
+
+/** 効果が切れたら元の環境効果に戻す（ほかに効果中の同種の魔法があればそのまま） */
+function restoreEnvironment(state: BattleState, data: GameData, side: Side, card: CardDef) {
+  const stillActive = state.players.some((p) => magicsWith(p, data, 'change_environment').length > 0);
+  if (stillActive) return;
+  state.environment = state.baseEnvironment;
+  const name = state.baseEnvironment ? `「${state.baseEnvironment.name}」` : 'なし';
+  log(state, side, `${card.name}の効果が切れ、環境効果が${name}に戻った`, 'magic', { kind: 'env', side, envId: state.baseEnvironment?.id ?? null, card: card.id });
+}
+
 // ---------- 手番終了 ----------
 
 function endTurn(state: BattleState, data: GameData) {
@@ -539,6 +573,7 @@ function endTurn(state: BattleState, data: GameData) {
   for (const m of [...me.magics]) {
     const card = data.cards[m.cardId];
     if (card.timing !== 'turn_end') continue;
+    const changesEnv = card.effects.some((e) => e.type === 'change_environment');
     for (const e of card.effects) {
       if (e.type === 'spend_all_for_damage') {
         const coins = me.coins;
@@ -549,6 +584,7 @@ function endTurn(state: BattleState, data: GameData) {
       }
     }
     consume(me, m, data);
+    if (changesEnv && m.remaining <= 0) restoreEnvironment(state, data, side, card);
   }
   if (checkWinner(state)) return;
 

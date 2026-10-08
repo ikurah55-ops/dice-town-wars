@@ -18,7 +18,10 @@ export type Effect =
   | { type: 'attack_multiplier'; amount: number }
   | { type: 'destroy_facility'; maxCost: number }
   | { type: 'spend_all_for_damage'; amount: number }
-  | { type: 'reroll'; amount: number };
+  | { type: 'reroll'; amount: number }
+  | { type: 'restrict_faces'; faces: number[] } // 自分のサイコロがこの目だけになる
+  | { type: 'change_environment' } // 環境効果をランダムに変える（効果中だけ）
+  | { type: 'halve_attack_damage' }; // 受ける攻撃カードのダメージを半分（切り上げ）
 
 export interface CardDef {
   id: string;
@@ -202,6 +205,8 @@ export interface BattleState {
   winner: Side | null;
   longBattleHappened: boolean;
   environment: EnvironmentDef | null;
+  /** 戦闘開始時の環境効果（魔法で変えたあと戻すため） */
+  baseEnvironment: EnvironmentDef | null;
   log: LogEntry[];
   /** true のときログを記録しない（シミュレーション高速化） */
   quiet: boolean;
@@ -223,7 +228,8 @@ export type Fx =
   | { kind: 'destroy'; side: Side; target: Side; card: string } // 破城槌で壊した施設
   | { kind: 'merc'; side: Side; target: Side; coins: number; amount: number; card: string } // 傭兵契約
   | { kind: 'storm'; amounts: [number, number] } // 長期戦ダメージ
-  | { kind: 'built'; side: Side; cards: string[] }; // その手番に建てた施設
+  | { kind: 'built'; side: Side; cards: string[] } // その手番に建てた施設
+  | { kind: 'env'; side: Side; envId: string | null; card: string }; // 環境効果が変わった（null は元に戻った）
 
 export interface LogEntry {
   turn: number;

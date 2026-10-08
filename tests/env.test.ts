@@ -176,3 +176,52 @@ describe('環境効果', () => {
     expect(s.players[1].hp).toBe(180 - 15);
   });
 });
+
+describe('新しい魔法', () => {
+  const ML = ['even_charm', 'ward', 'fickle_wind', 'archers', 'catapult'];
+  const mk = (p0: string, p1: string, env?: string) =>
+    createBattle(data, { name: 'P', maxHp: 180, dice: p0, loadout: ML }, { name: 'C', maxHp: 180, dice: p1, loadout: ML }, { seed: 11, environment: env ? data.environments[env] : null });
+  it('偶数の護符：自分のサイコロが2・4・6だけになる（3回）', () => {
+    const s = mk('normal', 'fixed6');
+    applyAction(s, data, { type: 'roll' });
+    s.players[0].coins = 20;
+    applyAction(s, data, { type: 'buy', cardId: 'even_charm' });
+    expect(faceWeights(s, data, 0).map((w) => w.face)).toEqual([2, 4, 6]);
+    for (let i = 0; i < 3; i++) {
+      applyAction(s, data, { type: 'end_turn' });
+      applyAction(s, data, { type: 'roll' });
+      applyAction(s, data, { type: 'end_turn' });
+      applyAction(s, data, { type: 'roll' });
+      expect(s.lastRoll! % 2).toBe(0);
+    }
+    expect(s.players[0].magics.some((m) => m.cardId === 'even_charm')).toBe(false);
+  });
+  it('守護の結界：相手の攻撃カードのダメージが半分（切り上げ）', () => {
+    const s = mk('fixed6', 'fixed4');
+    applyAction(s, data, { type: 'roll' });
+    s.players[0].coins = 20;
+    applyAction(s, data, { type: 'buy', cardId: 'ward' });
+    give(s, 1, 'barracks');
+    applyAction(s, data, { type: 'end_turn' });
+    applyAction(s, data, { type: 'roll' });
+    expect(s.players[0].hp).toBe(180 - 8); // 15 → 8
+  });
+  it('気まぐれな風：環境効果が別のものに変わり、自分の手番3回分のあと元に戻る', () => {
+    const s = mk('fixed6', 'fixed6', 'walls');
+    applyAction(s, data, { type: 'roll' });
+    s.players[0].coins = 20;
+    applyAction(s, data, { type: 'buy', cardId: 'fickle_wind' });
+    expect(s.environment?.id).not.toBe('walls');
+    expect(s.environment).not.toBeNull();
+    const changed = s.environment!.id;
+    for (let i = 0; i < 2; i++) {
+      applyAction(s, data, { type: 'end_turn' });
+      applyAction(s, data, { type: 'roll' });
+      applyAction(s, data, { type: 'end_turn' });
+      applyAction(s, data, { type: 'roll' });
+      expect(s.environment?.id).toBe(changed);
+    }
+    applyAction(s, data, { type: 'end_turn' }); // 3回目の手番終了で戻る
+    expect(s.environment?.id).toBe('walls');
+  });
+});

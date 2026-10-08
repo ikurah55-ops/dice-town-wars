@@ -218,6 +218,27 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
           case 'spend_all_for_damage':
             v += ((data.config.baseIncome + 1.5) * a * n) / k;
             break;
+          case 'restrict_faces': {
+            // 出る目を絞ったときの期待値の伸び
+            const before = expectedRollValue(state, data, side, myFaces);
+            const allowed = myFaces.filter((f) => e.faces.includes(f));
+            if (allowed.length > 0) v += Math.max(0, expectedRollValue(state, data, side, allowed) - before) * n;
+            break;
+          }
+          case 'change_environment':
+            // 結果は運次第なので、HPで負けているときの逆転の賭けとして使う
+            v += me.hp < them.hp * 0.8 ? 3 : 0.3;
+            break;
+          case 'halve_attack_damage': {
+            // 相手の攻撃カードの1手番あたりの期待ダメージの半分
+            let dmg = 0;
+            for (const f of them.facilities) {
+              const c = data.cards[f.cardId];
+              if (c.category === 'attack') dmg += faceProb(oppFaces, c.faces) * attackYield(them, c, data);
+            }
+            v += ((dmg / 2) / k) * n;
+            break;
+          }
         }
       }
       return v * w.magic;

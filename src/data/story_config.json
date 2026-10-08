@@ -71,6 +71,7 @@
       "holy_spring",
       "silence",
       "battering_ram",
+      "ward",
       "cannon",
       "knights",
       "catapult",
@@ -89,7 +90,10 @@
       "seal",
       "thieves",
       "orchard",
-      "spoils"
+      "spoils",
+      "odd_charm",
+      "even_charm",
+      "fickle_wind"
     ],
     "hpCostWeight": 1.4
   }

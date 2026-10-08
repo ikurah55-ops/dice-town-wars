@@ -68,6 +68,12 @@ export function describeEffect(e: Effect, data: GameData, level = 1): string {
       return `相手のコスト${e.maxCost}以下の施設を1枚破壊`;
     case 'spend_all_for_damage':
       return `残りコインをすべて払い、1コインにつき${a}ダメージ`;
+    case 'restrict_faces':
+      return `自分のサイコロが${e.faces.join('・')}の目だけになる`;
+    case 'change_environment':
+      return '環境効果をランダムに別のものへ変える';
+    case 'halve_attack_damage':
+      return '受ける攻撃カードのダメージが半分';
     case 'reroll':
       return `1ターンに${a}回、振り直せる`;
   }
@@ -82,6 +88,8 @@ const TIMING_LABEL: Record<string, string> = {
 export function describeCard(card: CardDef, data: GameData, level = 1, uses = data.config.magicUses): string {
   const body = card.effects.map((e) => describeEffect(e, data, level)).join('／');
   if (card.category === 'magic') {
+    if (card.effects.some((e) => e.type === 'change_environment')) return `購入時：${body}（${uses}ターン）`;
+    if (card.timing === 'opp_roll' && card.effects.some((e) => e.type === 'halve_attack_damage')) return `相手の手番${uses}回分、${body}`;
     const t = card.timing ? (TIMING_LABEL[card.timing] ?? '') : '';
     return `${t}${body}（${uses}回）`;
   }

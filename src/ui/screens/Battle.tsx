@@ -20,6 +20,8 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 type View = { hp: [number, number]; coins: [number, number] };
 const CPU_DELAY = { roll: 700, buy: 800, other: 650 };
 const FACES = [1, 2, 3, 4, 5, 6];
+/** 環境効果が「なし」に戻ったときの表示用 */
+const NO_ENV: EnvironmentDef = { id: 'none', name: '環境効果なし', description: '特別なルールはありません', effects: [], color: '#3a281b', icon: '🌤' };
 
 export function Battle({
   data,
@@ -43,12 +45,12 @@ export function Battle({
   tutorial?: boolean; // ストーリーのステージ1：戦い方のチュートリアルを出す
 }) {
   // 戦闘前に出すもの：環境効果の説明 → 環境効果の発表 → 戦い方のチュートリアル
-  type Intro = { kind: 'tut'; id: string; steps: TutStep[] } | { kind: 'env'; first: boolean };
+  type Intro = { kind: 'tut'; id: string; steps: TutStep[] } | { kind: 'env'; env: EnvironmentDef; first: boolean; label?: string };
   const [intro, setIntro] = useState<Intro[]>(() => {
     const q: Intro[] = [];
     if (environment) {
       if (!hasSeen(TUT.envIntro)) q.push({ kind: 'tut', id: TUT.envIntro, steps: envIntroSteps() });
-      q.push({ kind: 'env', first: !hasSeen(TUT.env(environment.id)) });
+      q.push({ kind: 'env', env: environment, first: !hasSeen(TUT.env(environment.id)) });
     }
     if (tutorial && !hasSeen(TUT.battleBasics)) q.push({ kind: 'tut', id: TUT.battleBasics, steps: battleBasicsSteps(data.config) });
     return q;
@@ -57,8 +59,21 @@ export function Battle({
   const introDone = () => {
     const cur = intro[0];
     if (cur?.kind === 'tut') markSeen(cur.id);
-    if (cur?.kind === 'env' && environment) markSeen(TUT.env(environment.id));
+    if (cur?.kind === 'env' && cur.env.id !== NO_ENV.id) markSeen(TUT.env(cur.env.id));
     setIntro(intro.slice(1));
+  };
+  /** 魔法で環境効果が変わったら発表画面を出す（タップするまで進まない） */
+  const queueEnvChanges = (fxs: Fx[]) => {
+    const items: Intro[] = fxs.flatMap((f) =>
+      f.kind === 'env'
+        ? [
+            f.envId
+              ? { kind: 'env' as const, env: data.environments[f.envId], first: !hasSeen(TUT.env(f.envId)), label: '環境効果が変わった！' }
+              : { kind: 'env' as const, env: NO_ENV, first: false, label: '環境効果が元に戻った' },
+          ]
+        : [],
+    );
+    if (items.length) setIntro((q) => [...q, ...items]);
   };
   const [state, setState] = useState<BattleState>(() =>
     createBattle(data, player, cpuDef, { seed: Math.floor(Math.random() * 2 ** 31), environment }),
@@ -116,6 +131,7 @@ export function Battle({
       else if (fxs.some((f) => f.kind === 'coin' || f.kind === 'income' || f.kind === 'steal')) sfx('coin', 0.3);
       stateRef.current = next;
       setState(next);
+      queueEnvChanges(fxs);
       return;
     }
     busyRef.current = true;
@@ -169,6 +185,7 @@ export function Battle({
     }
     stateRef.current = next;
     setState(next);
+    queueEnvChanges(fxs);
     setView(null);
     setPreview(null);
     if (reopenMarket && next.active === 0 && next.phase === 'buy') setMarketOpen(true);
@@ -240,9 +257,9 @@ export function Battle({
 
   return (
     <div
-      className={`screen battle ${environment ? 'has-env' : ''}`}
+      className={`screen battle ${state.environment ? 'has-env' : ''}`}
       ref={stageRef}
-      style={environment?.color ? { ['--env-bg' as string]: environment.color } : undefined}
+      style={state.environment?.color ? { ['--env-bg' as string]: state.environment.color } : undefined}
     >
       {/* 上：CPU */}
       <div className={`bar bar-enemy ${state.active === 1 && state.phase !== 'over' ? 'is-active' : ''}`}>
@@ -435,13 +452,7 @@ export function Battle({
       )}
 
       {intro[0]?.kind === 'tut' && <Tutorial key={intro[0].id} steps={intro[0].steps} onDone={introDone} />}
-      {intro[0]?.kind === 'env' && environment && (
-        <EnvAnnounce
-          env={environment}
-          firstTime={intro[0].first}
-          onDone={introDone}
-        />
-      )}
+      {intro[0]?.kind === 'env' && <EnvAnnounce key={intro.length} env={intro[0].env} firstTime={intro[0].first} label={intro[0].label} onDone={introDone} />}
       {buyTut && (
         <Tutorial
           steps={battleBuySteps()}

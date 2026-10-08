@@ -80,7 +80,7 @@ export function Tutorial({ steps, onDone }: { steps: TutStep[]; onDone: () => vo
 }
 
 /** 環境効果の発表画面（タップで進む）。初めての効果なら詳しい説明も出す */
-export function EnvAnnounce({ env, firstTime, onDone }: { env: EnvironmentDef; firstTime: boolean; onDone: () => void }) {
+export function EnvAnnounce({ env, firstTime, label = '今回の環境効果', onDone }: { env: EnvironmentDef; firstTime: boolean; label?: string; onDone: () => void }) {
   return (
     <div
       className="env-announce"
@@ -98,7 +98,7 @@ export function EnvAnnounce({ env, firstTime, onDone }: { env: EnvironmentDef; f
           <span>{env.icon ?? '🌐'}</span>
         </div>
         <div className="env-texts">
-          <div className="env-label">今回の環境効果</div>
+          <div className="env-label">{label}</div>
           <div className="env-name">{env.name}</div>
           <div className="env-desc">{env.description}</div>
           {firstTime && env.detail && (
@@ -107,7 +107,7 @@ export function EnvAnnounce({ env, firstTime, onDone }: { env: EnvironmentDef; f
               <span>{env.detail}</span>
             </div>
           )}
-          <div className="env-tap">画面をタップして戦闘開始</div>
+          <div className="env-tap">{label === '今回の環境効果' ? '画面をタップして戦闘開始' : '画面をタップして続ける'}</div>
         </div>
       </div>
     </div>

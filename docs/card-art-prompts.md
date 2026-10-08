@@ -66,3 +66,7 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | `goddess.jpg` | 女神の微笑み | A radiant goddess with golden hair, a halo and white feathered wings, gently smiling, divine light rays, two glowing dice floating in her hands, heavenly clouds. |
 | `war_horn.jpg` | 戦の角笛 | A huge ivory war horn with gold bands being blown on a hill, visible shockwaves of sound, an army with spears and banners below, blood-red sunset sky. |
 | `holy_spring.jpg` | 聖なる泉 | A sacred marble fountain in a moss-covered grotto, glowing crystal-clear water, a shaft of holy light from above, floating sparkles, white lilies. |
+| `even_charm.jpg` | 偶数の護符 | A glowing paper talisman inscribed with a blue sigil, floating among three ivory dice showing two, four and six, cool blue magical light, night sky with stars. |
+| `odd_charm.jpg` | 奇数の護符 | A glowing paper talisman inscribed with a golden-red sigil, floating among three ivory dice showing one, three and five, warm golden magical light, dusk sky. |
+| `fickle_wind.jpg` | 気まぐれな風 | Swirling magical gusts of wind sweeping across a hilltop with a golden weathervane spinning, leaves and petals flying, the sky changing from sunny to stormy across the scene. |
+| `ward.jpg` | 守護の結界 | A shimmering blue magical dome barrier protecting a small stone castle at night, enemy arrows bouncing off the glowing shield, sparkles of light. |

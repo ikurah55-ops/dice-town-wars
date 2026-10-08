@@ -664,6 +664,122 @@ const ART: Record<string, ReactNode> = {
     </>
   ),
 
+  even_charm: (
+    <>
+      <Bg fill="dt-sky-night" />
+      <Glow x={60} y={40} r={48} c="blue" />
+      <g transform="translate(60 40) rotate(-6)">
+        <rect x="-12" y="-28" width="24" height="56" fill="url(#dt-parchment)" stroke="#5a8ad8" strokeWidth="0.8" />
+        <text x="0" y="7" fontSize="18" fontWeight="900" textAnchor="middle" fill="#2a6ad8" fontFamily="serif">
+          偶
+        </text>
+      </g>
+      {[
+        [20, 22, 2],
+        [100, 24, 4],
+        [96, 62, 6],
+      ].map(([x, y, n]) => (
+        <g key={n} transform={`translate(${x} ${y}) rotate(${n * 7})`}>
+          <Glow x={0} y={0} r={11} c="blue" />
+          <rect x="-7" y="-7" width="14" height="14" rx="3" fill="#fffaf0" stroke="#5a8ad8" />
+          {(n === 2 ? [[-3, -3], [3, 3]] : n === 4 ? [[-3, -3], [3, -3], [-3, 3], [3, 3]] : [[-3, -3.5], [3, -3.5], [-3, 0], [3, 0], [-3, 3.5], [3, 3.5]]).map(([px, py], i) => (
+            <circle key={i} cx={px} cy={py} r="1.3" fill="#1a2a4a" />
+          ))}
+        </g>
+      ))}
+      <Particles seed={31} n={20} box={[8, 6, 112, 74]} r={[0.3, 0.8]} fill="#bfe6ff" />
+      <Vig />
+    </>
+  ),
+
+  odd_charm: (
+    <>
+      <Bg fill="dt-sky-dusk" />
+      <Glow x={60} y={40} r={48} c="gold" />
+      <g transform="translate(60 40) rotate(6)">
+        <rect x="-12" y="-28" width="24" height="56" fill="url(#dt-parchment)" stroke="#c9a24a" strokeWidth="0.8" />
+        <text x="0" y="7" fontSize="18" fontWeight="900" textAnchor="middle" fill="#b0400e" fontFamily="serif">
+          奇
+        </text>
+      </g>
+      {[
+        [22, 26, 1],
+        [98, 22, 3],
+        [24, 62, 5],
+      ].map(([x, y, n]) => (
+        <g key={n} transform={`translate(${x} ${y}) rotate(${-n * 6})`}>
+          <Glow x={0} y={0} r={11} c="gold" />
+          <rect x="-7" y="-7" width="14" height="14" rx="3" fill="#fffaf0" stroke="#c9a24a" />
+          {(n === 1 ? [[0, 0]] : n === 3 ? [[-3, -3], [0, 0], [3, 3]] : [[-3, -3], [3, -3], [0, 0], [-3, 3], [3, 3]]).map(([px, py], i) => (
+            <circle key={i} cx={px} cy={py} r={n === 1 ? 2 : 1.3} fill={n === 1 ? '#d0201a' : '#2a1a0a'} />
+          ))}
+        </g>
+      ))}
+      <Particles seed={32} n={20} box={[8, 6, 112, 74]} r={[0.3, 0.8]} fill="#ffe08a" />
+      <Vig />
+    </>
+  ),
+
+  fickle_wind: (
+    <>
+      <Bg fill="dt-sky-teal" />
+      <path d="M0 62 Q40 54 80 60 T120 58 V80 H0Z" fill="#1e4a3a" />
+      {[18, 30, 44].map((y, i) => (
+        <path
+          key={y}
+          d={`M${-10 + i * 6} ${y} Q30 ${y - 10} 60 ${y} T110 ${y - 2} q8 -6 2 -12 q-6 -4 -9 2`}
+          stroke="#e8fbff"
+          strokeWidth={2.4 - i * 0.5}
+          fill="none"
+          opacity={0.9 - i * 0.2}
+          strokeLinecap="round"
+        />
+      ))}
+      <line x1="86" y1="80" x2="86" y2="40" stroke="#2a1a0e" strokeWidth="1.6" />
+      <g transform="translate(86 40) rotate(-20)">
+        <path d="M-12 0 H12 L16 -3 L12 -6 H6 L2 -10 L-4 -6 H-12 L-14 -3Z" fill="url(#dt-gold)" stroke="#6a4208" strokeWidth="0.5" />
+      </g>
+      {[
+        [24, 52, 20],
+        [48, 36, -30],
+        [70, 58, 50],
+        [38, 66, 80],
+      ].map(([x, y, a], i) => (
+        <path key={i} transform={`translate(${x} ${y}) rotate(${a})`} d="M0 -3 Q3 0 0 3 Q-3 0 0 -3Z" fill={i % 2 ? '#e0a040' : '#6aa84a'} />
+      ))}
+      <Vig />
+    </>
+  ),
+
+  ward: (
+    <>
+      <Bg fill="dt-sky-night" />
+      <Particles seed={33} n={24} box={[0, 0, 120, 40]} r={[0.2, 0.6]} fill="#fff" op={0.7} />
+      <rect x="32" y="50" width="56" height="30" fill="url(#dt-stone-dark)" />
+      {[32, 42, 52, 62, 72, 82].map((x) => (
+        <rect key={x} x={x} y="45" width="6" height="6" fill="url(#dt-stone-dark)" />
+      ))}
+      <rect x="54" y="36" width="12" height="16" fill="url(#dt-stone-dark)" />
+      <path d="M52 36 L60 26 L68 36Z" fill="url(#dt-blue-cloth)" />
+      <Glow x={60} y={56} r={52} c="blue" />
+      <path d="M10 80 Q10 20 60 18 Q110 20 110 80" fill="none" stroke="#9ae6ff" strokeWidth="2.5" opacity="0.9" />
+      <path d="M16 80 Q16 26 60 24 Q104 26 104 80" fill="none" stroke="#5ac8ff" strokeWidth="1" opacity="0.6" />
+      {[
+        [18, 14, 40],
+        [96, 10, 140],
+        [104, 34, 160],
+      ].map(([x, y, a], i) => (
+        <g key={i} transform={`translate(${x} ${y}) rotate(${a})`}>
+          <line x1="-8" y1="0" x2="4" y2="0" stroke="#3a2a1a" strokeWidth="1" />
+          <path d="M4 -1.5 L8 0 L4 1.5Z" fill="#c8d0d8" />
+        </g>
+      ))}
+      <Sparkle x={30} y={30} s={0.8} fill="#e8fbff" />
+      <Sparkle x={90} y={28} s={0.6} fill="#e8fbff" />
+      <Vig />
+    </>
+  ),
+
   cannon: (
     <>
       <rect width="120" height="80" fill="#1a1416" />
