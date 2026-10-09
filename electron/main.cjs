@@ -28,7 +28,7 @@ function createWindow() {
     fullscreen: true, // 起動時はフルスクリーン（F11 / Alt+Enter で切り替え）
     backgroundColor: '#1a120c',
     title: 'ダイス・ウォーズ',
-    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    icon: path.join(__dirname, '..', 'dist', 'icon-512.png'), // ウィンドウのアイコン（アプリに同梱される dist から）
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
