@@ -10,7 +10,9 @@
     "test": "vitest run",
     "sim": "tsx src/sim/simulate.ts",
     "sim:story": "tsx src/sim/story.ts",
-    "sim:ai": "tsx src/sim/ai-levels.ts"
+    "sim:ai": "tsx src/sim/ai-levels.ts",
+    "desktop": "npm run build && electron .",
+    "dist:win": "npm run build && electron-builder --win dir"
   },
   "dependencies": {
     "react": "^19.3.0",
@@ -21,9 +23,35 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.3",
     "vitest": "^5.0.3"
+  },
+  "main": "electron/main.cjs",
+  "description": "ダイス・ウォーズ：出目で発動するカードで街を育ててボスと戦うデッキ構築バトル",
+  "author": "ikura",
+  "build": {
+    "appId": "com.ikura.dicewars",
+    "productName": "DiceWars",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "icon": "build/icon.png",
+      "executableName": "DiceWars"
+    }
   }
 }

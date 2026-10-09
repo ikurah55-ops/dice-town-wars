@@ -19,7 +19,7 @@ if (splash) {
   }, wait);
 }
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && import.meta.env.PROD && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
     // sw.js 自体も毎回確認し、アプリに戻ってきたときにも更新を確かめる
     navigator.serviceWorker

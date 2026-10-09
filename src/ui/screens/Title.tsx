@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal } from '../components';
+import { desktop } from '../desktop';
 
 /** スマホでは全画面＋横向き固定を試みる（対応していない環境では何もしない） */
 async function tryLandscape() {
@@ -52,6 +53,11 @@ export function Title({ onStory, onPractice, onOptions, storyProgress }: { onSto
             <button className="btn btn-ghost" onClick={onOptions}>
               オプション
             </button>
+            {desktop && (
+              <button className="btn btn-ghost" onClick={() => void desktop?.quit()}>
+                終了
+              </button>
+            )}
           </div>
           <p className="version">試作版 v0.2</p>
         </div>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { sfx } from '../audio';
 import { Modal } from '../components';
+import { desktop } from '../desktop';
 import { AI_LEVELS, updateSettings, useSettings, type AiLevelId } from '../settings';
 
 /** オプション：音量・バトル演出・敵AIの強さ・ストーリーのリセット */
@@ -8,6 +9,10 @@ export function Options({ onClose, onResetStory }: { onClose: () => void; onRese
   const s = useSettings();
   const [confirm, setConfirm] = useState(false);
   const [done, setDone] = useState(false);
+  const [full, setFull] = useState<boolean | null>(null); // デスクトップ版のフルスクリーン
+  useEffect(() => {
+    if (desktop) void desktop.isFullscreen().then(setFull);
+  }, []);
 
   return (
     <Modal title="オプション" onClose={onClose}>
@@ -38,6 +43,19 @@ export function Options({ onClose, onResetStory }: { onClose: () => void; onRese
             />
             <b>{Math.round(s.bgmVolume * 100)}</b>
           </label>
+          {desktop && full !== null && (
+            <div className="opt-row">
+              <span>画面</span>
+              <div className="seg">
+                <button className={full ? 'on' : ''} onClick={() => !full && void desktop!.toggleFullscreen().then(setFull)}>
+                  フルスクリーン
+                </button>
+                <button className={!full ? 'on' : ''} onClick={() => full && void desktop!.toggleFullscreen().then(setFull)}>
+                  ウィンドウ
+                </button>
+              </div>
+            </div>
+          )}
           <div className="opt-row">
             <span>バトル演出</span>
             <div className="seg">
