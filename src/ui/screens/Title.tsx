@@ -16,7 +16,7 @@ async function tryLandscape() {
 export function Title({ onStory, onPractice, onOptions, storyProgress }: { onStory: () => void; onPractice: () => void; onOptions: () => void; storyProgress: number }) {
   const [help, setHelp] = useState(false);
   return (
-    <div className="screen title-screen" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}title.jpg)` }}>
+    <div className="screen title-screen" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}splash.jpg)` }}>
       {/* 一枚絵の右側にロゴとメニュー */}
       <div className="title-panel">
         <div className="title-left">
