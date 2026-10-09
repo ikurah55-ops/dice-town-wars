@@ -30,12 +30,12 @@ describe('ステージ生成', () => {
   it('HP・大ボス・カードレベル・持ち込み枚数・初期コイン・型', () => {
     const s1 = generateStage(data, cfg, 1, null, {});
     expect(s1.hp).toBe(b.hpBase);
-    expect(s1.loadout).toHaveLength(0); // floor((1+4)/8) = 0
+    expect(s1.loadout).toEqual(['orchard']); // floor((1+8)/8) = 1
     expect(s1.type).toBe('economy'); // 1 % 4 = 1
     const s10 = generateStage(data, cfg, 10, null, {});
     expect(s10.isBig).toBe(true);
     expect(s10.hp).toBe(Math.round((b.hpBase + b.hpPerStage * 9) * b.bigBossHpMult));
-    expect(s10.loadout).toEqual(['watchtower', 'infirmary', 'ward']); // floor(14/8)=1、大ボス+1、ステージ8からは魔法も1枚
+    expect(s10.loadout).toEqual(['watchtower', 'infirmary', 'counter_battery', 'ward']); // floor(18/8)=2、大ボス+1、ステージ8からは魔法も1枚
     expect(s10.startCoins).toBe(3);
     const s15 = generateStage(data, cfg, 15, null, {});
     expect(s15.cardLevel).toBe(2); // 1 + floor(14/14)
@@ -56,15 +56,22 @@ describe('ステージ生成', () => {
     expect(st.type).toBe('defense');
     expect(st.loadout).toEqual(['watchtower', 'infirmary', 'ward']);
   });
-  it('環境効果はステージ15以上の偶数だけ。セーブに固定され、同じシードなら同じ', () => {
+  it('環境効果はステージ15〜39の偶数と、ステージ40以降の全部。セーブに固定され、同じシードなら同じ', () => {
     const a = newSave(data, cfg, 42);
     const b2 = newSave(data, cfg, 42);
     expect(a.envs).toEqual(b2.envs);
     for (let s = 1; s <= 50; s++) {
-      if (s >= 15 && s % 2 === 0) expect(data.environments[a.envs[s]!]).toBeTruthy();
+      if ((s >= 15 && s % 2 === 0) || s >= 40) expect(data.environments[a.envs[s]!]).toBeTruthy();
       else expect(a.envs[s]).toBeNull();
     }
     expect(stageFor(data, cfg, a, 16).envId).toBe(a.envs[16]);
+  });
+  it('古いセーブ（ステージ41などが環境効果なし）でも、読み込むと付く', () => {
+    const old = { ...newSave(data, cfg, 7), envs: { ...newSave(data, cfg, 7).envs, 41: null, 43: null } };
+    const m = migrateSave(JSON.parse(JSON.stringify(old)), data, cfg);
+    expect(data.environments[m.envs[41]!]).toBeTruthy();
+    expect(data.environments[m.envs[43]!]).toBeTruthy();
+    expect(m.envs[16]).toBe(old.envs[16]);
   });
   it('ボスのカードレベルは基本カードにも適用', () => {
     const st = generateStage(data, cfg, 30, null, {});

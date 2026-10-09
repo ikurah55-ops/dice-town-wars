@@ -48,13 +48,13 @@
     "maxCount": 10
   },
   "boss": {
-    "hpBase": 92,
-    "hpPerStage": 3.8,
+    "hpBase": 132,
+    "hpPerStage": 4.4,
     "bigBossEvery": 10,
     "bigBossHpMult": 1.05,
     "levelEvery": 14,
     "maxLevel": 5,
-    "cardsOffset": 4,
+    "cardsOffset": 8,
     "cardsDivisor": 8,
     "maxCards": 4,
     "bigBossExtraCards": 1,
@@ -77,7 +77,8 @@
   },
   "environment": {
     "fromStage": 15,
-    "evenStagesOnly": true
+    "evenStagesOnly": true,
+    "everyStageFrom": 40
   },
   "typeNames": {
     "attack": "攻撃型",

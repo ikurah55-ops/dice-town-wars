@@ -34,7 +34,7 @@ export interface StoryConfig {
     magicFromStage: number; // このステージからボスが必ず魔法を1枚持ち込む
     earlyMagic: Record<BossType, string>; // 型ごとの、最初に使う魔法
   };
-  environment: { fromStage: number; evenStagesOnly: boolean };
+  environment: { fromStage: number; evenStagesOnly: boolean; everyStageFrom?: number }; // everyStageFrom 以降は全ステージに付く
   typeNames: Record<BossType, string>;
   bossNames: string[]; // ステージごとのボスの名前（1始まりで並べる）
   simulation: { loadoutPriority: string[]; hpCostWeight: number };
@@ -84,7 +84,9 @@ export function bossThemeList(data: GameData, type: BossType): string[] {
 
 /** 環境効果が付くステージか */
 export function stageHasEnvironment(cfg: StoryConfig, s: number): boolean {
-  return s >= cfg.environment.fromStage && (!cfg.environment.evenStagesOnly || s % 2 === 0);
+  const e = cfg.environment;
+  if (e.everyStageFrom !== undefined && s >= e.everyStageFrom) return true;
+  return s >= e.fromStage && (!e.evenStagesOnly || s % 2 === 0);
 }
 
 /** 各ステージの環境効果をシードで決める（セーブデータに保存して固定する） */
@@ -214,6 +216,8 @@ export function migrateSave(raw: unknown, data: GameData, cfg: StoryConfig = sto
   }
   const envs = { ...base.envs };
   for (const [k, v] of Object.entries(r.envs ?? {})) {
+    // 環境効果が付くようになったステージ（設定の変更で増えたもの）は、新しく決めた効果を使う
+    if (v === null && stageHasEnvironment(cfg, Number(k))) continue;
     if (v === null || (typeof v === 'string' && data.environments[v])) envs[k] = v;
   }
   return {
