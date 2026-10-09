@@ -8,7 +8,8 @@
 npm run dist:win
 ```
 
-- できあがり：`release/win-unpacked/` フォルダ（中の `DiceWars.exe` が本体）
+- できあがり：`C:\Users\<ユーザー名>\DiceWars-release\win-unpacked\` フォルダ（中の `DiceWars.exe` が本体）
+  - プロジェクトが OneDrive の中にあると、同期がファイルをつかんで書き出しに失敗するので、OneDrive の外（ユーザーフォルダ直下）に書き出す
 - このフォルダごと Steam にアップロードします（インストーラーは不要。Steamがインストールを担当）
 - 手元で試すだけなら `npm run desktop`（ビルドしてそのまま起動）
 
@@ -30,7 +31,7 @@ npm run dist:win
    - 審査があり、公開予定日の2週間以上前に「近日公開」ページを出す必要がある
 4. **ビルドをアップロード**（SteamPipe）
    - Steamworks の「インストール設定」で起動オプションを登録：実行ファイル `DiceWars.exe`、OS は Windows
-   - デポ（Depot）を作り、`release/win-unpacked/` の中身をアップロード
+   - デポ（Depot）を作り、`DiceWars-release\win-unpacked\` の中身をアップロード
    - アップロードは Steamworks SDK の `steamcmd`（または SteamPipe GUI ツール）で行う
 5. **ビルドの審査** → 合格したらリリース
 

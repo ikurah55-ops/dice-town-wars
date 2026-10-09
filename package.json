@@ -12,7 +12,7 @@
     "sim:story": "tsx src/sim/story.ts",
     "sim:ai": "tsx src/sim/ai-levels.ts",
     "desktop": "npm run build && electron .",
-    "dist:win": "npm run build && electron-builder --win dir"
+    "dist:win": "npm run build && electron-builder --win dir -c.directories.output=%USERPROFILE%/DiceWars-release"
   },
   "dependencies": {
     "react": "^19.3.0",
