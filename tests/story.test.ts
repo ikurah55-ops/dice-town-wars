@@ -67,7 +67,8 @@ describe('ステージ生成', () => {
     expect(stageFor(data, cfg, a, 16).envId).toBe(a.envs[16]);
   });
   it('古いセーブ（ステージ41などが環境効果なし）でも、読み込むと付く', () => {
-    const old = { ...newSave(data, cfg, 7), envs: { ...newSave(data, cfg, 7).envs, 41: null, 43: null } };
+    const fresh = newSave(data, cfg, 7);
+    const old: StorySave = { ...fresh, envs: { ...fresh.envs, 41: null, 43: null } };
     const m = migrateSave(JSON.parse(JSON.stringify(old)), data, cfg);
     expect(data.environments[m.envs[41]!]).toBeTruthy();
     expect(data.environments[m.envs[43]!]).toBeTruthy();
