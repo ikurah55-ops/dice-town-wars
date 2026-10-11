@@ -42,6 +42,18 @@
         height: auto;
         filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
       }
+      #splash .splash-en {
+        position: relative;
+        width: min(42vw, 400px);
+        text-align: center;
+        margin-top: -4px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.5em;
+        padding-left: 0.5em;
+        color: #ffe9b0;
+        text-shadow: 0 1px 0 #3a2208, 0 0 8px rgba(0, 0, 0, 0.9);
+      }
       #splash .splash-load {
         position: relative;
         margin-top: 4px;
@@ -66,6 +78,7 @@
   <body>
     <div id="splash" aria-hidden="true">
       <img class="splash-logo" src="./logo.webp" alt="サイコロシアム" />
+      <div class="splash-en">DICOLOSSEUM</div>
       <div class="splash-load">読み込み中…</div>
     </div>
     <div id="root"></div>

@@ -226,12 +226,25 @@ button {
 }
 /* タイトルのロゴ画像（背景透過）。メニューと合わせて画面の高さに収まる大きさに */
 .logo-img {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   line-height: 0;
+}
+.logo-img .logo-en {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.5em;
+  padding-left: 0.5em; /* 字間の分だけ右にずれるのを打ち消して中央に */
+  color: #ffe9b0;
+  text-shadow: 0 1px 0 #3a2208, 0 0 8px rgba(0, 0, 0, 0.9);
 }
 .logo-img img {
   display: block;
   width: auto;
-  height: min(36dvh, 190px);
+  height: min(33dvh, 180px);
   max-width: 42vw;
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.75));

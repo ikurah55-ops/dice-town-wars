@@ -22,6 +22,7 @@ export function Title({ onStory, onPractice, onOptions, storyProgress }: { onSto
         <div className="title-left">
           <h1 className="logo logo-img">
             <img src={`${import.meta.env.BASE_URL}logo.webp`} alt="サイコロシアム" draggable={false} />
+            <span className="logo-en">DICOLOSSEUM</span>
           </h1>
           <p className="tagline">出目で動く街を育てて、ボスを倒せ！</p>
         </div>
