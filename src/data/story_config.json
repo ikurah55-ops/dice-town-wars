@@ -67,7 +67,7 @@
       "disrupt"
     ],
     "dice": "normal",
-    "magicFromStage": 8,
+    "magicFromStage": 9,
     "earlyMagic": {
       "attack": "war_horn",
       "economy": "tax",

@@ -35,7 +35,7 @@ describe('ステージ生成', () => {
     const s10 = generateStage(data, cfg, 10, null, {});
     expect(s10.isBig).toBe(true);
     expect(s10.hp).toBe(Math.round((b.hpBase + b.hpPerStage * 9) * b.bigBossHpMult));
-    expect(s10.loadout).toEqual(['watchtower', 'infirmary', 'counter_battery', 'ward']); // floor(18/8)=2、大ボス+1、ステージ8からは魔法も1枚
+    expect(s10.loadout).toEqual(['watchtower', 'infirmary', 'counter_battery', 'ward']); // floor(18/8)=2、大ボス+1、ステージ9からは魔法も1枚
     expect(s10.startCoins).toBe(3);
     const s15 = generateStage(data, cfg, 15, null, {});
     expect(s15.cardLevel).toBe(2); // 1 + floor(14/14)
@@ -43,8 +43,8 @@ describe('ステージ生成', () => {
     const s12 = generateStage(data, cfg, 12, null, {});
     expect(s12.type).toBe('attack');
     expect(s12.loadout).toEqual(['archers', 'cannon', 'war_horn']);
-    expect(generateStage(data, cfg, 7, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(false); // 7までは魔法なし
-    expect(generateStage(data, cfg, 8, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(true); // 8から魔法
+    expect(generateStage(data, cfg, 8, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(false); // 8までは魔法なし（プレイヤーが魔法を使えるのもステージ9から）
+    expect(generateStage(data, cfg, 9, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(true); // 9から魔法
     expect(s12.name).toBe(cfg.bossNames[11]);
     expect(data.cards[s12.subCard].story!.unlockAfterStage).toBeLessThanOrEqual(11);
     expect(generateStage(data, cfg, 44, null, {}).loadout).toEqual(['archers', 'cannon', 'war_horn', 'mercenary']);
