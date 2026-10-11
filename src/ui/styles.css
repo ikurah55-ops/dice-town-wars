@@ -224,30 +224,17 @@ button {
   margin-top: 4px;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
-/* タイトルの文字ロゴ */
+/* タイトルのロゴ画像（背景透過）。メニューと合わせて画面の高さに収まる大きさに */
 .logo-img {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.1;
-  filter: drop-shadow(0 4px 0 #3a2208) drop-shadow(0 8px 14px rgba(0, 0, 0, 0.8));
+  line-height: 0;
 }
-.logo-img .logo-text {
-  font-size: min(7.5vw, 54px);
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  background: linear-gradient(180deg, #fff6c8 0%, #f2c94c 45%, #c8862a 60%, #ffe08a 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-stroke: 1.2px #5a3410;
-}
-.logo-img .logo-en {
-  margin-top: 2px;
-  font-size: min(2vw, 13px);
-  font-weight: 800;
-  letter-spacing: 0.5em;
-  color: #ffe9b0;
+.logo-img img {
+  display: block;
+  width: auto;
+  height: min(36dvh, 190px);
+  max-width: 42vw;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.75));
 }
 .title-panel .btn-ghost {
   background: rgba(20, 12, 6, 0.72);

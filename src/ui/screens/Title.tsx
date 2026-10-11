@@ -21,9 +21,7 @@ export function Title({ onStory, onPractice, onOptions, storyProgress }: { onSto
       <div className="title-panel">
         <div className="title-left">
           <h1 className="logo logo-img">
-            {/* 新しいロゴ画像ができるまでは文字のロゴ */}
-            <span className="logo-text">サイコロシアム</span>
-            <span className="logo-en">DICOLOSSEUM</span>
+            <img src={`${import.meta.env.BASE_URL}logo.webp`} alt="サイコロシアム" draggable={false} />
           </h1>
           <p className="tagline">出目で動く街を育てて、ボスを倒せ！</p>
         </div>
