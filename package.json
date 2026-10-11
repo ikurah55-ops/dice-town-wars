@@ -12,7 +12,7 @@
     "sim:story": "tsx src/sim/story.ts",
     "sim:ai": "tsx src/sim/ai-levels.ts",
     "desktop": "npm run build && electron .",
-    "dist:win": "npm run build && electron-builder --win dir -c.directories.output=%USERPROFILE%/DiceWars-release"
+    "dist:win": "npm run build && electron-builder --win dir -c.directories.output=%USERPROFILE%/Dicolosseum-release"
   },
   "dependencies": {
     "react": "^19.3.0",
@@ -31,11 +31,11 @@
     "vitest": "^5.0.3"
   },
   "main": "electron/main.cjs",
-  "description": "ダイス・ウォーズ：出目で発動するカードで街を育ててボスと戦うデッキ構築バトル",
+  "description": "サイコロシアム：出目で発動するカードで街を育ててボスと戦うデッキ構築バトル",
   "author": "ikura",
   "build": {
-    "appId": "com.ikura.dicewars",
-    "productName": "DiceWars",
+    "appId": "com.ikura.dicolosseum",
+    "productName": "Dicolosseum",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -51,7 +51,7 @@
         "dir"
       ],
       "icon": "build/icon.png",
-      "executableName": "DiceWars"
+      "executableName": "Dicolosseum"
     }
   }
 }

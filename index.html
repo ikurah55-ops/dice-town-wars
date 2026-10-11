@@ -10,10 +10,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="ダイス・ウォーズ" />
-    <title>ダイス・ウォーズ</title>
+    <meta name="apple-mobile-web-app-title" content="サイコロシアム" />
+    <title>サイコロシアム</title>
     <link rel="preload" as="image" href="./splash.jpg" />
-    <link rel="preload" as="image" href="./logo.webp" />
     <style>
       /* 起動画面：アプリの読み込み中に出し、読み込み後にフェードで消す（main.tsx） */
       #splash {
@@ -37,10 +36,28 @@
       }
       #splash .splash-logo {
         position: relative;
-        display: block;
-        width: min(48vw, 460px);
-        height: auto;
-        filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        filter: drop-shadow(0 4px 0 #3a2208) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.8));
+      }
+      #splash .logo-text {
+        font-size: min(6vw, 48px);
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        line-height: 1.1;
+        background: linear-gradient(180deg, #fff6c8 0%, #f2c94c 45%, #c8862a 60%, #ffe08a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-stroke: 1.5px #5a3410;
+      }
+      #splash .logo-en {
+        margin-top: 2px;
+        font-size: min(1.7vw, 12px);
+        font-weight: 800;
+        letter-spacing: 0.5em;
+        color: #ffe9b0;
       }
       #splash .splash-load {
         position: relative;
@@ -65,7 +82,7 @@
   </head>
   <body>
     <div id="splash" aria-hidden="true">
-      <img class="splash-logo" src="./logo.webp" alt="ダイス・ウォーズ" />
+      <div class="splash-logo"><span class="logo-text">サイコロシアム</span><span class="logo-en">DICOLOSSEUM</span></div>
       <div class="splash-load">読み込み中…</div>
     </div>
     <div id="root"></div>

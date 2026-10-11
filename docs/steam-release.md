@@ -1,6 +1,6 @@
 # Steam版（Windows）の作り方と公開の流れ
 
-ダイス・ウォーズは Electron でWindowsアプリにできます。ブラウザ版（GitHub Pages）と同じ中身です。
+サイコロシアムは Electron でWindowsアプリにできます。ブラウザ版（GitHub Pages）と同じ中身です。
 
 ## 1. アプリを作る
 
@@ -8,7 +8,7 @@
 npm run dist:win
 ```
 
-- できあがり：`C:\Users\<ユーザー名>\DiceWars-release\win-unpacked\` フォルダ（中の `DiceWars.exe` が本体）
+- できあがり：`C:\Users\<ユーザー名>\Dicolosseum-release\win-unpacked\` フォルダ（中の `Dicolosseum.exe` が本体）
   - プロジェクトが OneDrive の中にあると、同期がファイルをつかんで書き出しに失敗するので、OneDrive の外（ユーザーフォルダ直下）に書き出す
 - このフォルダごと Steam にアップロードします（インストーラーは不要。Steamがインストールを担当）
 - 手元で試すだけなら `npm run desktop`（ビルドしてそのまま起動）
@@ -18,7 +18,7 @@ npm run dist:win
 - 起動時はフルスクリーン。**F11** または **Alt+Enter** でウィンドウと切り替え（オプション画面の「画面」でも切り替え可能）
 - 画面はスマホ横画面（667×375）を基準に、ウィンドウの大きさに合わせて拡大表示（1920×1080 なら約2.9倍）
 - タイトル画面に「終了」ボタン
-- セーブデータ：`%APPDATA%\DiceWars\Local Storage\` に保存（ブラウザ版とは別）
+- セーブデータ：`%APPDATA%\Dicolosseum\Local Storage\` に保存（ブラウザ版とは別）
 - Steamオーバーレイ（Shift+Tab）が出るように設定済み
 
 ## 3. Steamで公開する手順（Steamworks）
@@ -30,8 +30,8 @@ npm run dist:win
 3. **ストアページを作る**（説明文、スクリーンショット5枚以上、トレーラー、カプセル画像など）
    - 審査があり、公開予定日の2週間以上前に「近日公開」ページを出す必要がある
 4. **ビルドをアップロード**（SteamPipe）
-   - Steamworks の「インストール設定」で起動オプションを登録：実行ファイル `DiceWars.exe`、OS は Windows
-   - デポ（Depot）を作り、`DiceWars-release\win-unpacked\` の中身をアップロード
+   - Steamworks の「インストール設定」で起動オプションを登録：実行ファイル `Dicolosseum.exe`、OS は Windows
+   - デポ（Depot）を作り、`Dicolosseum-release\win-unpacked\` の中身をアップロード
    - アップロードは Steamworks SDK の `steamcmd`（または SteamPipe GUI ツール）で行う
 5. **ビルドの審査** → 合格したらリリース
 
