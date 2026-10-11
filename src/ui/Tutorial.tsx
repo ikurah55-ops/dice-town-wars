@@ -18,15 +18,34 @@ export function Tutorial({ steps, onDone }: { steps: TutStep[]; onDone: () => vo
   const step = steps[i];
 
   useLayoutEffect(() => {
-    const el = step?.target ? document.querySelector(step.target) : null;
-    const app = document.querySelector('.app');
-    if (!el || !app) {
-      setRect(null);
-      return;
-    }
-    const r = el.getBoundingClientRect();
-    const a = app.getBoundingClientRect();
-    setRect(new DOMRect(r.left - a.left, r.top - a.top, r.width, r.height));
+    const measure = (scroll: boolean) => {
+      const el = step?.target ? document.querySelector(step.target) : null;
+      const app = document.querySelector('.app');
+      if (!el || !app) {
+        setRect(null);
+        return;
+      }
+      const a = app.getBoundingClientRect();
+      let r = el.getBoundingClientRect();
+      // 照らす対象が画面の外（スクロールの先）にあるときは、見えるところまでスクロールしてから照らす
+      if (scroll && (r.top < a.top || r.bottom > a.bottom || r.left < a.left || r.right > a.right)) {
+        el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+        r = el.getBoundingClientRect();
+      }
+      const next = new DOMRect(r.left - a.left, r.top - a.top, r.width, r.height);
+      setRect((prev) => (prev && prev.x === next.x && prev.y === next.y && prev.width === next.width && prev.height === next.height ? prev : next));
+    };
+    measure(true);
+    // 画面が動いている途中（市場が開くアニメーションなど）でも合うよう、少し後にもう一度測る
+    const t1 = window.setTimeout(() => measure(true), 200);
+    const t2 = window.setTimeout(() => measure(false), 450);
+    const onResize = () => measure(false);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.removeEventListener('resize', onResize);
+    };
   }, [i, step]);
 
   // 吹き出しの大きさを測ってから、対象の上下で空いている方に置き、画面の内側に収める
@@ -46,18 +65,26 @@ export function Tutorial({ steps, onDone }: { steps: TutStep[]; onDone: () => vo
       return;
     }
     const cx = rect.left + rect.width / 2;
-    if (rect.height > H * 0.5) {
-      // 大きな対象（盤面・市場など）は、対象の中央に重ねる
-      setPos({ left: clampX(cx - bw / 2), top: clampY(rect.top + rect.height / 2 - bh / 2) });
-      return;
-    }
+    const cy = rect.top + rect.height / 2;
+    const G = 10; // 照らす場所との間隔
     const spaceBelow = H - (rect.top + rect.height) - M;
     const spaceAbove = rect.top - M;
-    let top: number;
-    if (spaceBelow >= bh + 10 && (spaceBelow >= spaceAbove || spaceAbove < bh + 10)) top = rect.top + rect.height + 10;
-    else if (spaceAbove >= bh + 10) top = rect.top - 10 - bh;
-    else top = spaceBelow > spaceAbove ? H - bh - M : M; // どちらにも入らなければ、広い方の端に寄せる
-    setPos({ left: clampX(cx - bw / 2), top: clampY(top) });
+    const spaceRight = W - (rect.left + rect.width) - M;
+    const spaceLeft = rect.left - M;
+    // 1) 上下のどちらかに入るなら、広い方へ
+    if (spaceBelow >= bh + G || spaceAbove >= bh + G) {
+      const top = spaceBelow >= bh + G && (spaceBelow >= spaceAbove || spaceAbove < bh + G) ? rect.top + rect.height + G : rect.top - G - bh;
+      setPos({ left: clampX(cx - bw / 2), top: clampY(top) });
+      return;
+    }
+    // 2) 左右のどちらかに入るなら、広い方へ（縦に大きいカードなど）
+    if (spaceRight >= bw + G || spaceLeft >= bw + G) {
+      const left = spaceRight >= bw + G && (spaceRight >= spaceLeft || spaceLeft < bw + G) ? rect.left + rect.width + G : rect.left - G - bw;
+      setPos({ left: clampX(left), top: clampY(cy - bh / 2) });
+      return;
+    }
+    // 3) どこにも入らない大きな対象（盤面・市場など）は、対象の中央に重ねる
+    setPos({ left: clampX(cx - bw / 2), top: clampY(cy - bh / 2) });
   }, [rect, i, step]);
 
   if (!step) return null;
