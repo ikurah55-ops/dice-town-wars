@@ -35,6 +35,7 @@ import { StoryResult } from './screens/StoryResult';
 import { Title } from './screens/Title';
 import { Upgrade } from './screens/Upgrade';
 import { loadStory, resetStory, saveStory } from './storyStorage';
+import { installKeyboard } from './keyboard';
 
 type Screen =
   | { name: 'title' }
@@ -82,6 +83,9 @@ export function App() {
     window.addEventListener('pointerdown', onDown);
     return () => window.removeEventListener('pointerdown', onDown);
   }, []);
+
+  // パソコン向けのキーボード操作（Space/Enter で決定、Esc で戻る・閉じる）
+  useEffect(() => installKeyboard(), []);
 
   /** 練習モードの戦闘開始：環境効果（なし／ランダム／指定）とAIの強さを決める */
   const startPractice = (boss: BossDef, build: BuildResult) => {

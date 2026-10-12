@@ -123,6 +123,38 @@ export function StoryMap({
     return () => ro.disconnect();
   }, []);
 
+  // パソコン向け：マウスホイール（縦回し）と ←→ キーで1ページずつめくる
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let lock = 0;
+    const go = (dir: number) => {
+      const now = Date.now();
+      if (now < lock) return;
+      lock = now + 350; // 勢いよく回しても1ページずつ
+      const page = Math.max(0, Math.min(P - 1, Math.round(el.scrollLeft / el.clientWidth) + dir));
+      el.scrollTo({ left: page * el.clientWidth, behavior: 'smooth' });
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || Math.abs(e.deltaY) < 4) return; // 横スクロールはそのまま
+      e.preventDefault();
+      go(e.deltaY > 0 ? 1 : -1);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (document.querySelector('.modal, .tut')) return; // ウィンドウやチュートリアルを出しているときは動かさない
+      if (e.key === 'ArrowRight') go(1);
+      else if (e.key === 'ArrowLeft') go(-1);
+      else return;
+      e.preventDefault();
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('keydown', onKey);
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [P]);
+
   // 大きさが変わったら（最初も）、今のページを表示し直す
   useEffect(() => {
     const el = scrollRef.current;
