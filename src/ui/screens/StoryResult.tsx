@@ -53,7 +53,7 @@ export function StoryResult({
       <div className="title-buttons">
         {(newlyUnlockable.length > 0 || slotsUp) && (
           <div className="unlock-news">
-            {slotsUp && <div>🎒 持ち込み枠が{slotsUp}枠になった！</div>}
+            {slotsUp && <div>🎒 選択枠が{slotsUp}枠になった！</div>}
             {newlyUnlockable.length > 0 && <div>🔓 解放できるカード：{newlyUnlockable.map((c) => c.name).join('、')}</div>}
           </div>
         )}

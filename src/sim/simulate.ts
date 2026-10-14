@@ -108,7 +108,7 @@ function main() {
   }
   console.log(`長期戦ダメージ発生率 ${pct(longBattle / games)}`);
   console.log(`先攻の勝率 ${pct(firstWins / games)}`);
-  console.log('\nカード別（持ち込んだ側の勝率 / 持ち込んだ試合での購入率）:');
+  console.log('\nカード別（選んだ側の勝率 / 選んだ試合での購入率）:');
   const rows = Object.entries(cardStats).sort((x, y) => y[1].wins / y[1].games - x[1].wins / x[1].games);
   for (const [id, st] of rows) {
     const name = data.cards[id].name;

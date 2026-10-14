@@ -63,7 +63,7 @@ export function upgradeScreenSteps(cfg: GameConfig, story: StoryConfig): TutStep
 export function newCardSteps(): TutStep[] {
   return [
     { title: '新しいカード', text: '新しいカードを解放できるようになりました！' },
-    { title: 'カードの解放', text: '「強化」画面で経験値を払って解放すると、ビルドで持ち込めるようになります。', target: '.upgrade-btn' },
+    { title: 'カードの解放', text: '「強化」画面で経験値を払って解放すると、ビルドで選べるようになります。', target: '.upgrade-btn' },
   ];
 }
 
@@ -74,7 +74,7 @@ export function magicSteps(story: StoryConfig, cfg: GameConfig, maxNow: number):
     { title: '魔法の使い方', text: `魔法は買ったその手番から効果が出て、${cfg.magicUses}回分続く使い切りのカードです。` },
     {
       title: '魔法のルール',
-      text: `今は持ち込みのうち魔法${maxNow}枚まで（持ち込み枠が増えると最大${story.maxMagic}枚）。同じ魔法は効果中に重ねて買えず、効果が切れた後も${cfg.magicCooldown}ターンは買い直せません。`,
+      text: `今は選択カードのうち魔法${maxNow}枚まで（選択枠が増えると最大${story.maxMagic}枚）。同じ魔法は効果中に重ねて買えず、効果が切れた後も${cfg.magicCooldown}ターンは買い直せません。`,
     },
   ];
 }

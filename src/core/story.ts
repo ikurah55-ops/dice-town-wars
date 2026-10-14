@@ -1,5 +1,5 @@
 // ストーリーモードのロジック（UI非依存）。
-// ステージ生成・経験値・解放・強化・持ち込み枠・セーブデータを扱う。
+// ステージ生成・経験値・解放・強化・選択枠・セーブデータを扱う。
 
 import storyConfigJson from '../data/story_config.json';
 import storyStagesJson from '../data/story_stages.json';
@@ -31,7 +31,7 @@ export interface StoryConfig {
     startCoinsEvery: number;
     typeByRemainder: BossType[];
     dice: string;
-    magicFromStage: number; // このステージからボスが必ず魔法を1枚持ち込む
+    magicFromStage: number; // このステージからボスが必ず魔法を1枚選ぶ
     earlyMagic: Record<BossType, string>; // 型ごとの、最初に使う魔法
   };
   environment: { fromStage: number; evenStagesOnly: boolean; everyStageFrom?: number }; // everyStageFrom 以降は全ステージに付く
@@ -74,7 +74,7 @@ export interface StageDef {
   subCard: string; // サブミッション：このカードを戦闘中に1枚以上買って勝利
 }
 
-/** 型ごとの持ち込みリスト（bossOrder 順） */
+/** 型ごとの選択カードリスト（bossOrder 順） */
 export function bossThemeList(data: GameData, type: BossType): string[] {
   return data.cardList
     .filter((c) => c.story?.bossTheme === type)
@@ -118,7 +118,7 @@ export function generateStage(
   const o = overrides[String(s)] ?? {};
   const type = o.type ?? b.typeByRemainder[s % b.typeByRemainder.length];
   let loadout = o.loadout ?? bossThemeList(data, type).slice(0, count);
-  // 魔法の解放と同じ時期から、ボスも魔法を1枚は持ち込む
+  // 魔法の解放と同じ時期から、ボスも魔法を1枚は選ぶ
   if (!o.loadout && s >= b.magicFromStage && !loadout.some((id) => data.cards[id]?.category === 'magic')) {
     const m = b.earlyMagic[type];
     if (m && data.cards[m]) loadout = [...loadout, m];
@@ -247,7 +247,7 @@ export function isCleared(save: StorySave, s: number): boolean {
   return save.cleared.includes(s);
 }
 
-/** 今の持ち込み枠で持ち込める魔法の枚数 */
+/** 今の選択枠で選べる魔法の枚数 */
 export function storyMaxMagic(cfg: StoryConfig, save: StorySave): number {
   const h = highestCleared(save);
   let n = 0;
@@ -272,7 +272,7 @@ function storyOf(card: CardDef) {
   return card.story ?? { unlockAfterStage: 0, unlockExp: 0, levelable: card.category !== 'magic', levelCost: [2, 4, 6, 8], bossTheme: null };
 }
 
-/** 持ち込みに使えるカード（基本カード以外で、最初から解放済み＋解放したもの） */
+/** 選択に使えるカード（基本カード以外で、最初から解放済み＋解放したもの） */
 export function isUnlocked(card: CardDef, save: StorySave): boolean {
   if (card.base) return false;
   return storyOf(card).unlockAfterStage === 0 || save.unlocked.includes(card.id);
@@ -348,16 +348,16 @@ export function playerCombatant(data: GameData, cfg: StoryConfig, save: StorySav
   return { name: 'あなた', maxHp: playerMaxHp(cfg, save), dice, loadout, cardLevels: levels };
 }
 
-/** ストーリーの持ち込みの検証（枠数・魔法の上限・解放済みか） */
+/** ストーリーの選択カードの検証（枠数・魔法の上限・解放済みか） */
 export function validateStoryLoadout(data: GameData, cfg: StoryConfig, save: StorySave, ids: string[]): string | null {
   const slots = loadoutSlots(cfg, save);
   // 枠は上限。解放済みのカードが足りないこともあるので、少ない枚数でも始められる
-  if (ids.length > slots) return `持ち込みは${slots}枚までです`;
+  if (ids.length > slots) return `選択カードは${slots}枚までです`;
   if (new Set(ids).size !== ids.length) return '同じカードは1枚までです';
   if (ids.some((id) => !data.cards[id] || !isUnlocked(data.cards[id], save))) return '解放していないカードがあります';
   const magic = ids.filter((id) => data.cards[id].category === 'magic').length;
   const maxMagic = storyMaxMagic(cfg, save);
-  if (magic > maxMagic) return maxMagic === 0 ? '今は魔法を持ち込めません' : `魔法は${maxMagic}枚までです`;
+  if (magic > maxMagic) return maxMagic === 0 ? '今は魔法を選べません' : `魔法は${maxMagic}枚までです`;
   return null;
 }
 

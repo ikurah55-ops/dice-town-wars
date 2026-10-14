@@ -22,7 +22,7 @@ export function StageSelect({ data, onBack, onSelect }: { data: GameData; onBack
               </button>
             </div>
             <div className="boss-loadout">
-              <div className="section-label">ボスの持ち込みカード</div>
+              <div className="section-label">ボスの選択カード</div>
               <div className="card-grid cols-4">
                 {b.loadout.map((id) => (
                   <CardView key={id} card={data.cards[id]} data={data} />

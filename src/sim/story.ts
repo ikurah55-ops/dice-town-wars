@@ -4,9 +4,9 @@
 // 前提（指示書の「シミュレーションの前提」）
 // - プレイヤーもCPU。負けたら、クリア済みの最も先のステージに1回挑んでから再挑戦する
 // - 経験値は解放できるカードがあればその解放を優先して貯める（優先順で上のもの）
-//   なければ基本カード＋持ち込み中の施設のうち最もレベルの低いもののレベルアップか、最大HPの強化。
+//   なければ基本カード＋選択中の施設のうち最もレベルの低いもののレベルアップか、最大HPの強化。
 //   HP強化の必要経験値を1.4倍して比べ、安い方を選ぶ
-// - 持ち込みは解放済みカードから優先順に枠数分（魔法は2枚まで）
+// - 選択カードは解放済みカードから優先順に枠数分（魔法は2枚まで）
 
 import { DEFAULT_AI } from '../core/ai';
 import { runAutoBattle } from '../core/auto';
@@ -76,7 +76,7 @@ function spendExp(save: StorySave): StorySave {
       }
       return save; // 解放のために貯める
     }
-    // 基本カード＋持ち込み中の施設のうち、最もレベルの低いもの
+    // 基本カード＋選択中の施設のうち、最もレベルの低いもの
     const loadout = chooseLoadout(save).filter((id) => data.cards[id].category !== 'magic');
     const pool = [...data.config.marketBaseCards, ...loadout].filter((id) => levelUpCost(data, save, id) !== null);
     pool.sort((a, b) => cardLevel(save, a) - cardLevel(save, b));

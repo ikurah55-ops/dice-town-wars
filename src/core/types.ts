@@ -43,7 +43,7 @@ export interface CardStoryDef {
   levelable: boolean;
   levelCost: number[]; // Lv2〜Lv5への必要経験値
   bossTheme: BossType | null; // ボスが使う型
-  bossOrder?: number; // 型ごとの持ち込みリストでの順番（1始まり）
+  bossOrder?: number; // 型ごとの選択カードリストでの順番（1始まり）
 }
 
 export interface DiceDef {

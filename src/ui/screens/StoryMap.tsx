@@ -274,7 +274,7 @@ export function StoryMap({
             <i aria-hidden="true">❤️</i>最大HP <b>{playerMaxHp(cfg, save)}</b>
           </span>
           <span className="map-stat">
-            <i aria-hidden="true">🎒</i>持ち込み <b>{loadoutSlots(cfg, save)}</b>枠
+            <i aria-hidden="true">🎒</i>選択カード <b>{loadoutSlots(cfg, save)}</b>枠
           </span>
         </div>
         <button className="map-upgrade upgrade-btn" onClick={onUpgrade}>
@@ -429,7 +429,7 @@ function StageInfo({ data, save, stage: st, onClose, onPlay }: { data: GameData;
             </p>
           </div>
           <div className="stage-info-right">
-            <div className="section-label">ボスの持ち込みカード</div>
+            <div className="section-label">ボスの選択カード</div>
             {st.loadout.length === 0 ? (
               <p className="hint">なし（基本カードだけで戦う）</p>
             ) : (

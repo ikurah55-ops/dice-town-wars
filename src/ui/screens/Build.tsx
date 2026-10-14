@@ -39,7 +39,7 @@ export function Build({
 }: {
   data: GameData;
   vsLabel: string;
-  candidates: CardDef[]; // 持ち込めるカード
+  candidates: CardDef[]; // 選べるカード
   locked?: { card: CardDef; note: string }[]; // まだ使えないカード（表示のみ）
   slots: number;
   maxMagic: number;
@@ -121,9 +121,9 @@ export function Build({
         </div>
         <div className="build-status">
           <span>
-            持ち込み {picked.length}/{slots}
+            選択カード {picked.length}/{slots}
           </span>
-          {/* 魔法は持ち込み枠の中で最大 maxMagic 枚（別枠ではない） */}
+          {/* 魔法は選択枠の中で最大 maxMagic 枚（別枠ではない） */}
           <span className={magicCount > maxMagic ? 'warn' : ''}>
             うち魔法 {magicCount}（{maxMagic}枚まで）
           </span>

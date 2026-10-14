@@ -21,7 +21,7 @@ export function buildGameData(
     diceMap[d.id] = d;
   }
   for (const b of bosses) {
-    for (const id of b.loadout) if (!cardMap[id]) throw new Error(`ボス ${b.id} の持ち込みカード ${id} が存在しません`);
+    for (const id of b.loadout) if (!cardMap[id]) throw new Error(`ボス ${b.id} の選択カード ${id} が存在しません`);
     if (!diceMap[b.dice]) throw new Error(`ボス ${b.id} のサイコロ ${b.dice} が存在しません`);
   }
   for (const id of [...config.marketBaseCards, ...config.startingCards]) {
@@ -44,14 +44,14 @@ export function bossMaxHp(config: GameConfig, stage: number): number {
   return config.bossMaxHp + Math.floor((stage - 1) / 3) * config.bossHpGrowthPer3Stages;
 }
 
-/** 持ち込みカード候補（基本カード以外） */
+/** 選択カード候補（基本カード以外） */
 export function loadoutCandidates(data: GameData): CardDef[] {
   return data.cardList.filter((c) => !c.base);
 }
 
 export function validateLoadout(data: GameData, ids: string[]): string | null {
   const { cards: n, maxMagic } = data.config.loadout;
-  if (ids.length !== n) return `持ち込みカードを${n}枚選んでください`;
+  if (ids.length !== n) return `選択カードを${n}枚選んでください`;
   if (new Set(ids).size !== ids.length) return '同じカードは1枚までです';
   const magic = ids.filter((id) => data.cards[id]?.category === 'magic').length;
   if (magic > maxMagic) return `魔法は${maxMagic}枚までです`;

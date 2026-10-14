@@ -8,6 +8,6 @@
   {"id": "inflation", "name": "物価高騰", "description": "全カードのコスト+1", "effects": [{"type": "cost_delta", "amount": 1}], "color": "#5a3214", "icon": "💰", "detail": "全カードのコストが1上がります。安いカードほど割高になるので、買う順番をよく考えましょう。"},
   {"id": "trade_wind", "name": "交易の風", "description": "基本収入+1", "effects": [{"type": "base_income_delta", "amount": 1}], "color": "#14485a", "icon": "⛵", "detail": "毎ターンの基本収入が1増えて2コインになります。高いカードに早く手が届きます。"},
   {"id": "walls", "name": "城壁の時代", "description": "カウンターカードの効果1.5倍", "effects": [{"type": "counter_multiplier", "amount": 1.5}], "color": "#383e48", "icon": "🏰", "detail": "見張り塔・救護所・関所・反撃砲台など、カウンターカードの効果が1.5倍になります。守りを固めると攻撃が通りにくくなります。"},
-  {"id": "mana_day", "name": "魔力の満ちる日", "description": "魔法の効果が3回→4回続く", "effects": [{"type": "magic_uses", "amount": 4}], "color": "#3a1a5e", "icon": "🔮", "detail": "魔法カードの効果が4回続きます（通常は3回）。魔法を持ち込んでいると有利です。"},
+  {"id": "mana_day", "name": "魔力の満ちる日", "description": "魔法の効果が3回→4回続く", "effects": [{"type": "magic_uses", "amount": 4}], "color": "#3a1a5e", "icon": "🔮", "detail": "魔法カードの効果が4回続きます（通常は3回）。魔法を選んでいると有利です。"},
   {"id": "short_war", "name": "短期決戦", "description": "長期戦ダメージが10ターンを超えたら発生（通常は15）", "effects": [{"type": "long_battle_turn", "amount": 10}], "color": "#4a0a1a", "icon": "⏳", "detail": "長期戦ダメージが11ターン目から始まります（通常は16ターン目）。早く決着をつける攻めの構成が有利です。"}
 ]

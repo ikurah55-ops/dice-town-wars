@@ -2777,7 +2777,7 @@ button {
   color: #ffb4a8;
 }
 
-/* 持ち込み枚数と魔法の上限は2行で表示 */
+/* 選択カード枚数と魔法の上限は2行で表示 */
 .build-status {
   flex-direction: column;
   align-items: center;

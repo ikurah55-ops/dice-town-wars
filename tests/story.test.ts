@@ -27,7 +27,7 @@ const clearUpTo = (save: StorySave, n: number): StorySave => ({ ...save, cleared
 
 describe('ステージ生成', () => {
   const b = cfg.boss;
-  it('HP・大ボス・カードレベル・持ち込み枚数・初期コイン・型', () => {
+  it('HP・大ボス・カードレベル・選択カード枚数・初期コイン・型', () => {
     const s1 = generateStage(data, cfg, 1, null, {});
     expect(s1.hp).toBe(b.hpBase);
     expect(s1.loadout).toEqual(['orchard']); // floor((1+8)/8) = 1
@@ -151,7 +151,7 @@ describe('解放・レベル・HP・枠', () => {
     expect(costs).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     expect(playerMaxHp(cfg, s)).toBe(280);
   });
-  it('持ち込み枠は3 → 5で4 → 12で5 → 20で6 → 30で7（基本3枚と合わせて最大10枚）', () => {
+  it('選択枠は3 → 5で4 → 12で5 → 20で6 → 30で7（基本3枚と合わせて最大10枚）', () => {
     const s = newSave(data, cfg, 1);
     expect(loadoutSlots(cfg, s)).toBe(3);
     expect(loadoutSlots(cfg, clearUpTo(s, 5))).toBe(4);
