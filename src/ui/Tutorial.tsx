@@ -1,7 +1,9 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import type { EnvironmentDef } from '../core/types';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CATEGORY_LABEL } from '../core/cards';
+import type { CardDef, EnvironmentDef, GameData } from '../core/types';
 import { envImage } from './art';
 import { sfx } from './audio';
+import { CardView } from './components';
 
 export interface TutStep {
   title: string;
@@ -181,6 +183,48 @@ export function EnvAnnounce({ env, firstTime, label = '今回の環境効果', o
           <div className="env-texts">{texts}</div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** 新しく解放できるようになったカードを、1枚ずつ画面いっぱいに見せる（タップで次へ） */
+export function CardUnlockAnnounce({ cards, data, onDone }: { cards: CardDef[]; data: GameData; onDone: () => void }) {
+  const [i, setI] = useState(0);
+  const card = cards[i];
+  useEffect(() => {
+    sfx('unlock');
+  }, [i]);
+  return (
+    <div
+      className={`card-announce cat-${card.category}`}
+      onClick={() => {
+        sfx('page');
+        if (i + 1 < cards.length) setI(i + 1);
+        else onDone();
+      }}
+      role="dialog"
+      aria-label={`新しいカード：${card.name}`}
+    >
+      <div className="card-announce-rays" aria-hidden="true" />
+      {/* key でカードが変わるたびに登場アニメーションをやり直す */}
+      <div key={card.id} className="card-announce-body">
+        <div className="card-announce-card">
+          <CardView card={card} data={data} />
+        </div>
+        <div className="card-announce-texts">
+          <div className="env-label">
+            新しいカードが解放できる！{cards.length > 1 && `（${i + 1}/${cards.length}）`}
+          </div>
+          <div className="env-name">{card.name}</div>
+          <div className="env-desc">
+            {CATEGORY_LABEL[card.category]}カード　コスト{card.cost}
+          </div>
+          <div className="env-detail">
+            <span>「強化」画面で経験値{card.story?.unlockExp ?? 0}を払うと、ビルドで選べるようになります。</span>
+          </div>
+          <div className="env-tap">{i + 1 < cards.length ? '画面をタップして次のカードへ' : '画面をタップして続ける'}</div>
+        </div>
+      </div>
     </div>
   );
 }

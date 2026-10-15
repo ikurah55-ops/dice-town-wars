@@ -257,6 +257,7 @@ export function App() {
         })()}
       {screen.name === 'storyResult' && (
         <StoryResult
+          data={data}
           state={screen.state}
           stage={screen.stage}
           gains={screen.gains}

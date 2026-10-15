@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import type { ExpGain, StageDef } from '../../core/story';
 import { stageLabel } from '../../core/story';
-import type { BattleState, CardDef } from '../../core/types';
+import type { BattleState, CardDef, GameData } from '../../core/types';
+import { CardUnlockAnnounce } from '../Tutorial';
 
 /** ストーリーの結果画面：勝敗と経験値の内訳 */
 export function StoryResult({
+  data,
   state,
   stage,
   gains,
@@ -15,6 +18,7 @@ export function StoryResult({
   onRetry,
   onUpgrade,
 }: {
+  data: GameData;
   state: BattleState;
   stage: StageDef;
   gains: ExpGain[];
@@ -28,6 +32,8 @@ export function StoryResult({
 }) {
   const win = state.winner === 0;
   const me = state.players[0];
+  // 新しく解放できるカードは、結果画面を開いたときに一度だけ大きく見せる
+  const [announce, setAnnounce] = useState(newlyUnlockable.length > 0);
   return (
     <div className={`screen result-screen ${win ? 'is-win' : 'is-lose'}`}>
       <div className="result-left">
@@ -67,6 +73,7 @@ export function StoryResult({
           もう一度挑戦
         </button>
       </div>
+      {announce && <CardUnlockAnnounce cards={newlyUnlockable} data={data} onDone={() => setAnnounce(false)} />}
     </div>
   );
 }

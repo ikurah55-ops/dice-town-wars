@@ -1,5 +1,5 @@
 // パソコン向けのキーボード操作。画面ごとに書かず、「今いちばん手前にあるもの」を操作する
-//   Space / Enter : 決定（チュートリアル・発表画面を進める、サイコロを振る、出目で決定、手番終了、ステージ情報の「挑戦する」）
+//   Space / Enter : 決定（チュートリアル・発表画面（環境効果・新しいカード）を進める、サイコロを振る、出目で決定、手番終了、ステージ情報の「挑戦する」）
 //   Esc           : 戻る・閉じる（チュートリアルのスキップ、ウィンドウを閉じる、市場を閉じる、前の画面へ、戦闘中はメニュー）
 
 const visible = (el: Element | null): el is HTMLElement => !!el && (el as HTMLElement).getClientRects().length > 0;
@@ -37,6 +37,7 @@ function onKeyDown(e: KeyboardEvent) {
     handled = press([
       '.tut', // チュートリアルを進める
       '.env-announce', // 環境効果の発表を進める
+      '.card-announce', // 新しいカードの発表を進める
       '.built', // 建設の表示を進める
       '.modal .btn-primary', // ステージ情報の「挑戦する」など
       '.market .market-head .btn-primary', // 購入フェーズの「手番終了」
