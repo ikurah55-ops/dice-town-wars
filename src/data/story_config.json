@@ -34,7 +34,7 @@
       "maxMagic": 2
     },
     {
-      "afterStage": 20,
+      "afterStage": 21,
       "slots": 6,
       "maxMagic": 2
     },
@@ -54,7 +54,7 @@
   },
   "boss": {
     "hpBase": 132,
-    "hpPerStage": 4.4,
+    "hpPerStage": 4.6,
     "bigBossEvery": 10,
     "bigBossHpMult": 1.05,
     "levelEvery": 14,

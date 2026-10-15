@@ -151,12 +151,13 @@ describe('解放・レベル・HP・枠', () => {
     expect(costs).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     expect(playerMaxHp(cfg, s)).toBe(280);
   });
-  it('選択枠は3 → 5で4 → 12で5 → 20で6 → 30で7（基本3枚と合わせて最大10枚）', () => {
+  it('選択枠は3 → 5で4 → 12で5 → 21で6 → 30で7（基本3枚と合わせて最大10枚）', () => {
     const s = newSave(data, cfg, 1);
     expect(loadoutSlots(cfg, s)).toBe(3);
     expect(loadoutSlots(cfg, clearUpTo(s, 5))).toBe(4);
     expect(loadoutSlots(cfg, clearUpTo(s, 12))).toBe(5);
-    expect(loadoutSlots(cfg, clearUpTo(s, 20))).toBe(6);
+    expect(loadoutSlots(cfg, clearUpTo(s, 20))).toBe(5);
+    expect(loadoutSlots(cfg, clearUpTo(s, 21))).toBe(6);
     expect(loadoutSlots(cfg, clearUpTo(s, 29))).toBe(6);
     expect(loadoutSlots(cfg, clearUpTo(s, 30))).toBe(7);
     expect(loadoutSlots(cfg, clearUpTo(s, 50)) + data.config.marketBaseCards.length).toBe(10);
