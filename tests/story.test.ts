@@ -35,7 +35,7 @@ describe('ステージ生成', () => {
     const s10 = generateStage(data, cfg, 10, null, {});
     expect(s10.isBig).toBe(true);
     expect(s10.hp).toBe(Math.round((b.hpBase + b.hpPerStage * 9) * b.bigBossHpMult));
-    expect(s10.loadout).toEqual(['watchtower', 'infirmary', 'counter_battery', 'ward']); // floor(18/8)=2、大ボス+1、ステージ9からは魔法も1枚
+    expect(s10.loadout).toEqual(['watchtower', 'infirmary', 'counter_battery', 'ward']); // floor(18/8)=2、大ボス+1、ステージ7からは魔法も1枚
     expect(s10.startCoins).toBe(3);
     const s15 = generateStage(data, cfg, 15, null, {});
     expect(s15.cardLevel).toBe(2); // 1 + floor(14/14)
@@ -43,8 +43,8 @@ describe('ステージ生成', () => {
     const s12 = generateStage(data, cfg, 12, null, {});
     expect(s12.type).toBe('attack');
     expect(s12.loadout).toEqual(['archers', 'cannon', 'war_horn']);
-    expect(generateStage(data, cfg, 8, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(false); // 8までは魔法なし（プレイヤーが魔法を使えるのもステージ9から）
-    expect(generateStage(data, cfg, 9, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(true); // 9から魔法
+    expect(generateStage(data, cfg, 6, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(false); // 6までは魔法なし（プレイヤーはステージ6から魔法を使える）
+    expect(generateStage(data, cfg, 7, null, {}).loadout.some((id) => data.cards[id].category === 'magic')).toBe(true); // 7から魔法
     expect(s12.name).toBe(cfg.bossNames[11]);
     expect(data.cards[s12.subCard].story!.unlockAfterStage).toBeLessThanOrEqual(11);
     expect(generateStage(data, cfg, 44, null, {}).loadout).toEqual(['archers', 'cannon', 'war_horn', 'mercenary']);
@@ -166,9 +166,10 @@ describe('解放・レベル・HP・枠', () => {
     expect(validateStoryLoadout(data, cfg, s, ['orchard', 'archers', 'catapult', 'watchtower'])).toMatch('3枚まで');
     // 魔法は枠の中で最大2枚。施設だけで埋めてもよい
     const late: StorySave = { ...clearUpTo(s, 30), unlocked: ['watchtower', 'mill', 'tax', 'seal', 'thieves'] };
-    // 魔法の上限は枠数で変わる：3枠0、4枠1、5枠1、6枠2、7枠3
-    expect([0, 5, 12, 20, 30].map((n) => storyMaxMagic(cfg, clearUpTo(s, n)))).toEqual([0, 1, 1, 2, 3]);
-    expect(validateStoryLoadout(data, cfg, { ...clearUpTo(s, 12), unlocked: ['tax', 'seal'] }, ['orchard', 'tax', 'seal'])).toMatch('1枚まで');
+    // 魔法の上限：最初0、5クリアで1、7クリアで2（ステージ8から2枚）、30クリアで3
+    expect([0, 5, 7, 12, 20, 30].map((n) => storyMaxMagic(cfg, clearUpTo(s, n)))).toEqual([0, 1, 2, 2, 2, 3]);
+    expect(validateStoryLoadout(data, cfg, { ...clearUpTo(s, 6), unlocked: ['tax', 'seal'] }, ['orchard', 'tax', 'seal'])).toMatch('1枚まで');
+    expect(validateStoryLoadout(data, cfg, { ...clearUpTo(s, 7), unlocked: ['tax', 'seal'] }, ['orchard', 'tax', 'seal'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'catapult', 'watchtower', 'mill'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'catapult', 'tax', 'seal'])).toBeNull();
     expect(validateStoryLoadout(data, cfg, late, ['orchard', 'archers', 'tax', 'seal', 'thieves'])).toBeNull(); // 魔法3枚まで

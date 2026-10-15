@@ -1,5 +1,6 @@
 // ストーリーモードの通しシミュレーション
 // 例: npm run sim:story -- --runs 200 --seed 1
+//     --detail 1-15 を付けると、そのステージ範囲の初挑戦の勝率を1ステージずつ表示する
 //
 // 前提（指示書の「シミュレーションの前提」）
 // - プレイヤーもCPU。負けたら、クリア済みの最も先のステージに1回挑んでから再挑戦する
@@ -189,6 +190,11 @@ function main() {
       t += firstTry[s].total;
     }
     console.log(`  ステージ${String(a).padStart(2)}〜${String(a + 4).padStart(2)}  ${pct(w / Math.max(1, t))}`);
+  }
+  if (args.detail) {
+    const [from, to] = args.detail.split('-').map(Number);
+    console.log(`\n初挑戦の勝率（1ステージずつ ${from}〜${to}）:`);
+    for (let s = from; s <= Math.min(to, N); s++) console.log(`  ステージ${String(s).padStart(2)}  ${pct(firstTry[s].win / Math.max(1, firstTry[s].total))}`);
   }
   console.log('\n10ステージごと（指示書の表と同じ区切り）:');
   for (let a = 1; a <= N; a += 10) {

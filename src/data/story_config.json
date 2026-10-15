@@ -24,9 +24,14 @@
       "maxMagic": 1
     },
     {
+      "afterStage": 7,
+      "slots": 4,
+      "maxMagic": 2
+    },
+    {
       "afterStage": 12,
       "slots": 5,
-      "maxMagic": 1
+      "maxMagic": 2
     },
     {
       "afterStage": 20,
@@ -67,7 +72,7 @@
       "disrupt"
     ],
     "dice": "normal",
-    "magicFromStage": 9,
+    "magicFromStage": 7,
     "earlyMagic": {
       "attack": "war_horn",
       "economy": "tax",

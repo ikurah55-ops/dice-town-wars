@@ -52,13 +52,13 @@
     "story": {"unlockAfterStage": 6, "unlockExp": 4, "levelable": true, "levelCost": [2,4,6,8], "bossTheme": "defense", "bossOrder": 3} },
   { "id": "seal", "name": "封印の札", "category": "magic", "cost": 3, "timing": "own_roll",
     "effects": [{"type": "ban_face", "target": "self"}],
-    "story": {"unlockAfterStage": 8, "unlockExp": 4, "levelable": false, "levelCost": [], "bossTheme": null} },
+    "story": {"unlockAfterStage": 5, "unlockExp": 4, "levelable": false, "levelCost": [], "bossTheme": null} },
   { "id": "thieves", "name": "盗賊団", "category": "magic", "cost": 5, "timing": "turn_start",
     "effects": [{"type": "steal_coins", "amount": 3}],
     "story": {"unlockAfterStage": 12, "unlockExp": 5, "levelable": false, "levelCost": [], "bossTheme": null} },
   { "id": "tax", "name": "徴税令", "category": "magic", "cost": 4, "timing": "turn_start",
     "effects": [{"type": "income_bonus", "amount": 3}],
-    "story": {"unlockAfterStage": 8, "unlockExp": 4, "levelable": false, "levelCost": [], "bossTheme": "economy", "bossOrder": 4} },
+    "story": {"unlockAfterStage": 5, "unlockExp": 4, "levelable": false, "levelCost": [], "bossTheme": "economy", "bossOrder": 4} },
   { "id": "silence", "name": "沈黙の呪い", "category": "magic", "cost": 4, "timing": "opp_roll",
     "effects": [{"type": "ban_face", "target": "opponent"}],
     "story": {"unlockAfterStage": 16, "unlockExp": 6, "levelable": false, "levelCost": [], "bossTheme": "disrupt", "bossOrder": 3} },
@@ -91,5 +91,5 @@
     "story": {"unlockAfterStage": 15, "unlockExp": 5, "levelable": false, "levelCost": [], "bossTheme": null} },
   { "id": "ward", "name": "守護の結界", "category": "magic", "cost": 8, "timing": "opp_roll",
     "effects": [{"type": "halve_attack_damage"}],
-    "story": {"unlockAfterStage": 10, "unlockExp": 4, "levelable": false, "levelCost": [], "bossTheme": null} }
+    "story": {"unlockAfterStage": 7, "unlockExp": 4, "levelable": false, "levelCost": [], "bossTheme": null} }
 ]
