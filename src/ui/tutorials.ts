@@ -92,7 +92,7 @@ export function magicBattleSteps(cfg: GameConfig): TutStep[] {
 /** 強化画面で、奇襲カードを初めて解放できるようになったとき */
 export function raidSteps(): TutStep[] {
   return [
-    { title: '奇襲カード', text: '奇襲カード（橙）を解放できるようになりました！ここで経験値を払って解放しましょう。', target: '[data-tut="raid"]' },
+    { title: '奇襲カード', text: '奇襲カード（鋼色）を解放できるようになりました！ここで経験値を払って解放しましょう。', target: '[data-tut="raid"]' },
     { title: '一撃で壊れる', text: '奇襲カードは自分の出目で発動し、攻撃カードよりずっと大きなダメージを与えます。そのかわり、一度発動すると壊れて盤面からなくなります。' },
     { title: '奇襲の使い方', text: '同じ奇襲カードを何枚も建てておくと、その目が出た瞬間にまとめて大ダメージ。戦の角笛などの攻撃の強化も効きますが、相手の見張り塔などで軽減されます。' },
   ];
@@ -101,7 +101,7 @@ export function raidSteps(): TutStep[] {
 /** 初めて奇襲カードが出てくる戦闘（ストーリー） */
 export function raidBattleSteps(): TutStep[] {
   return [
-    { title: '奇襲カード', text: 'この戦闘には奇襲カード（橙）があります。自分の出目で大ダメージを与えますが、一度発動すると壊れます。' },
+    { title: '奇襲カード', text: 'この戦闘には奇襲カード（鋼色）があります。自分の出目で大ダメージを与えますが、一度発動すると壊れます。' },
     { title: '建て直しも作戦', text: '壊れた奇襲カードは、市場にあればまた買って建て直せます。決めどころで一気に攻めましょう。', target: '.side-actions' },
   ];
 }

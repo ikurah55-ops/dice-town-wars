@@ -41,7 +41,7 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | `spearmen.jpg` | 槍兵隊 | A disciplined phalanx of medieval spearmen in blue tabards holding a wall of kite shields, long spears angled forward, golden-hour light, dusty battlefield, banners behind them. |
 | `knights.jpg` | 騎士団 | A charge of heavily armored knights on horseback with lowered lances and red pennants, thundering across a field at sunset, dust clouds, castle on a distant hill. |
 
-### 奇襲カード（橙。一度発動すると壊れる大技）
+### 奇襲カード（鋼色。一度発動すると壊れる大技）
 
 | ファイル名 | カード | 題材 |
 |---|---|---|

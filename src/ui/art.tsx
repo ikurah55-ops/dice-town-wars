@@ -1462,7 +1462,7 @@ export function TypeIcon({ category }: { category: CardCategory }) {
       {category === 'raid' && (
         <>
           <path d="M10 1.5 L11.8 6.6 L16.6 4 L14.2 8.6 L18.5 10 L14.2 11.6 L16.4 16.2 L11.6 13.6 L10 18.5 L8.4 13.6 L3.6 16.2 L5.8 11.6 L1.5 10 L5.8 8.6 L3.4 4 L8.2 6.6Z" fill="#fff" />
-          <circle cx="10" cy="10" r="2.6" fill="#d2691e" />
+          <circle cx="10" cy="10" r="2.6" fill="#3d4250" />
         </>
       )}
     </svg>
