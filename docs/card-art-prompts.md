@@ -51,7 +51,7 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | `forlorn_hope.jpg` | 決死隊 | （作成済み） |
 | `assassin.jpg` | 暗殺者 | （作成済み） |
 | `fire_arrows.jpg` | 火矢の斉射 | （作成済み） |
-| `night_raid.jpg` | 夜襲隊 | A small band of raiders in dark cloaks creeping toward a castle under a moonless sky, carrying torches shielded by their hands, scaling ropes and hooks, tense and stealthy mood, faint firelight on stone walls. |
+| `night_raid.jpg` | 夜襲隊 | （作成済み） |
 
 ### カウンターカード
 
