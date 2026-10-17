@@ -136,6 +136,40 @@ function shake(ctx: FxContext, px: number, ms = 380) {
   ctx.stage.animate(k, { duration: ms });
 }
 
+/** ヒットストップの長さ（60fps で約2〜3フレーム） */
+const HITSTOP_MS = 45;
+
+/** 着弾の瞬間に、画面の動き（演出・CSSアニメーション）を一瞬だけ止める */
+async function hitStop(ctx: FxContext, ms = HITSTOP_MS) {
+  if (reduced()) return;
+  // 着弾の絵を1フレーム描いてから止める（画面が隠れていて描画されないときも止まらないよう、時間でも進める）
+  await new Promise<void>((r) => {
+    requestAnimationFrame(() => r());
+    setTimeout(r, 20);
+  });
+  const anims = ctx.root.parentElement!.getAnimations({ subtree: true }).filter((a) => a.playState === 'running');
+  for (const a of anims) a.pause();
+  await sleep(ms);
+  for (const a of anims) a.play();
+}
+
+/** ダメージをくらった側の帯（名前・HP）を横に揺らす */
+function shakeBar(ctx: FxContext, side: Side, px: number) {
+  const bar = q(ctx, side === 1 ? '.bar-enemy' : '.bar-me') as HTMLElement | null;
+  if (!bar || reduced()) return;
+  const k: Keyframe[] = [];
+  for (let i = 0; i < 6; i++) k.push({ transform: `translateX(${(i % 2 ? -1 : 1) * px * (1 - i / 6)}px)` });
+  k.push({ transform: 'translateX(0)' });
+  bar.animate(k, { duration: 360, easing: 'ease-out' });
+}
+
+/** 着弾：ヒットストップ → 画面とくらった側の帯を揺らす */
+async function impact(ctx: FxContext, targets: Side[], amount: number, stagePx: number, stageMs?: number) {
+  await hitStop(ctx);
+  shake(ctx, stagePx, stageMs);
+  for (const t of targets) shakeBar(ctx, t, clamp(amount / 5, 3, 9));
+}
+
 function flash(ctx: FxContext, cls: string, strength: number) {
   const f = el(ctx, `fx-flash ${cls}`, { x: 0, y: 0 });
   f.animate([{ opacity: strength }, { opacity: 0 }], { duration: 420, easing: 'ease-out' }).finished.then(() => f.remove());
@@ -266,10 +300,10 @@ export async function playFx(ctx: FxContext, fx: Fx, onImpactRaw: () => void): P
       onImpact();
       burst(ctx, to, 'fx-burst-atk', clamp(60 + fx.amount * 2.5, 70, 200), 600);
       flash(ctx, 'fx-flash-red', clamp(fx.amount / 80, 0.15, 0.55));
-      shake(ctx, clamp(fx.amount / 4, 3, 14));
       popText(ctx, numPt(to, fx.target), `-${fx.amount}`, 'fx-dmg', clamp(26 + fx.amount * 0.6, 28, 64), 1100);
       pulse(q(ctx, `[data-hp="${fx.target}"]`), 'fx-hurt', 500);
-      await sleep(750);
+      await impact(ctx, [fx.target], fx.amount, clamp(fx.amount / 4, 3, 14));
+      await sleep(750 - HITSTOP_MS);
       return;
     }
     case 'shield': {
@@ -347,9 +381,9 @@ export async function playFx(ctx: FxContext, fx: Fx, onImpactRaw: () => void): P
       onImpact();
       burst(ctx, to, 'fx-burst-ctr', clamp(60 + fx.amount * 2.5, 70, 180), 520);
       flash(ctx, 'fx-flash-blue', clamp(fx.amount / 80, 0.15, 0.45));
-      shake(ctx, clamp(fx.amount / 4, 3, 12));
       popText(ctx, numPt(to, fx.target), `-${fx.amount}`, 'fx-zap', clamp(26 + fx.amount * 0.6, 28, 56), 1000);
-      await sleep(700);
+      await impact(ctx, [fx.target], fx.amount, clamp(fx.amount / 4, 3, 12));
+      await sleep(700 - HITSTOP_MS);
       return;
     }
     case 'income':
@@ -561,9 +595,9 @@ async function mercenary(ctx: FxContext, fx: Extract<Fx, { kind: 'merc' }>, onIm
   onImpact();
   burst(ctx, to, 'fx-burst-atk', clamp(60 + fx.amount * 2.5, 70, 200), 600);
   flash(ctx, 'fx-flash-red', clamp(fx.amount / 80, 0.15, 0.5));
-  shake(ctx, clamp(fx.amount / 4, 3, 14));
   popText(ctx, numPt(to, fx.target), `-${fx.amount}`, 'fx-dmg', clamp(26 + fx.amount * 0.6, 28, 64), 1100);
-  await sleep(700);
+  await impact(ctx, [fx.target], fx.amount, clamp(fx.amount / 4, 3, 14));
+  await sleep(700 - HITSTOP_MS);
 }
 
 /** 長期戦：画面が赤黒く脈打ち、両者が削られる */
@@ -573,7 +607,7 @@ async function storm(ctx: FxContext, fx: Extract<Fx, { kind: 'storm' }>, onImpac
   flash(ctx, 'fx-flash-storm', 0.7);
   await sleep(450);
   onImpact();
-  shake(ctx, 9, 500);
+  void impact(ctx, [0, 1], Math.max(...fx.amounts), 9, 500);
   for (const s of [0, 1] as Side[]) {
     const p = hpPt(ctx, s);
     burst(ctx, p, 'fx-burst-storm', 90, 600);
