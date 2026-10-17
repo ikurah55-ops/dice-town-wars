@@ -34,7 +34,7 @@ function give(s: BattleState, side: Side, ...ids: string[]) {
 
 describe('データ', () => {
   it('全データが読み込める', () => {
-    expect(Object.keys(defaultData.cards)).toHaveLength(31);
+    expect(Object.keys(defaultData.cards)).toHaveLength(34);
     expect(defaultData.config.playerMaxHp).toBe(180);
     expect(defaultData.bosses.length).toBeGreaterThan(0);
   });
@@ -95,6 +95,35 @@ describe('施設の発動', () => {
     give(s, 0, 'catapult', 'catapult');
     applyAction(s, data, { type: 'roll' });
     expect(s.players[1].hp).toBe(180 - 60);
+  });
+});
+
+describe('奇襲', () => {
+  const kegDmg = () => (data.cards.powder_keg.effects[0] as { amount: number }).amount;
+  it('発動するとダメージを与えて壊れる（同じ目の奇襲はまとめて発動）', () => {
+    const s = setup('fixed6', 'fixed1', undefined, ['orchard', 'mill', 'spoils', 'archers']);
+    give(s, 0, 'powder_keg', 'powder_keg', 'catapult', 'siege_tower');
+    applyAction(s, data, { type: 'roll' });
+    expect(s.players[1].hp).toBe(180 - kegDmg() * 2 - 30);
+    // 6で発動した火薬樽2枚だけ壊れる。投石機と、5の攻城塔は残る
+    expect(s.players[0].facilities.map((f) => f.cardId).sort()).toEqual(['catapult', 'siege_tower', 'wheat']);
+    expect(s.log.some((l) => l.fx?.kind === 'spent' && l.fx.card === 'powder_keg' && l.fx.count === 2)).toBe(true);
+  });
+  it('見張り塔で軽減される', () => {
+    const towerDmg = (data.cards.siege_tower.effects[0] as { amount: number }).amount;
+    const s = setup('fixed5', 'fixed1', undefined, ['watchtower', 'infirmary', 'toll', 'counter_battery']);
+    give(s, 0, 'siege_tower');
+    give(s, 1, 'watchtower'); // 見張り塔は相手の出目4・5で発動して-5
+    applyAction(s, data, { type: 'roll' });
+    expect(s.players[1].hp).toBe(180 - (towerDmg - 5));
+  });
+  it('戦利品市場の「攻撃カード1枚につき」には数えない', () => {
+    const s = setup('fixed6', 'fixed1', undefined, ['orchard', 'mill', 'spoils', 'archers']);
+    s.players[0].facilities = [];
+    give(s, 0, 'spoils', 'catapult', 'powder_keg');
+    const before = s.players[0].coins;
+    applyAction(s, data, { type: 'roll' });
+    expect(s.players[0].coins - before).toBe(1); // 戦利品市場は投石機の1枚分だけ（収入は手番開始時に受け取り済み）
   });
 });
 

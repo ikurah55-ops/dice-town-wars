@@ -75,8 +75,8 @@ export function Build({
     onStart(b);
   };
 
-  const groups = ['economy', 'attack', 'counter', 'magic'] as const;
-  const groupLabel = { economy: '経済', attack: '攻撃', counter: 'カウンター', magic: '魔法' };
+  const groups = ['economy', 'attack', 'raid', 'counter', 'magic'] as const;
+  const groupLabel = { economy: '経済', attack: '攻撃', raid: '奇襲', counter: 'カウンター', magic: '魔法' };
 
   return (
     <div className="screen build-screen">

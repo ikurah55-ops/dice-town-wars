@@ -28,7 +28,13 @@ export const CATEGORY_LABEL: Record<string, string> = {
   attack: '攻撃',
   counter: 'カウンター',
   magic: '魔法',
+  raid: '奇襲',
 };
+
+/** 自分の出目で相手にダメージを与えるカード（攻撃・奇襲）。角笛・環境効果・軽減・半減の対象 */
+export function isAttacker(card: CardDef): boolean {
+  return card.category === 'attack' || card.category === 'raid';
+}
 
 function perLabel(per: string, data: GameData): string {
   if (per.startsWith('category:')) return `${CATEGORY_LABEL[per.slice(9)]}カード`;
@@ -93,6 +99,7 @@ export function describeCard(card: CardDef, data: GameData, level = 1, uses = da
     const t = card.timing ? (TIMING_LABEL[card.timing] ?? '') : '';
     return `${t}${body}（${uses}回）`;
   }
+  if (card.category === 'raid') return `${body}（発動すると壊れる）`;
   return body;
 }
 

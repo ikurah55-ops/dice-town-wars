@@ -1,6 +1,6 @@
 // CPUの思考。「残りターンを考慮した価値（コイン換算）÷コスト」が高いカードから買う。
 
-import { countOwned, levelFactor, levelOf } from './cards';
+import { countOwned, isAttacker, levelFactor, levelOf } from './cards';
 import { envCost } from './env';
 import { applyAction, buyError, canReroll, destroyTargets, effectiveFaces, opp } from './rules';
 import { createRng } from './rng';
@@ -97,7 +97,7 @@ export function faceValue(state: BattleState, data: GameData, side: Side, face: 
         else if (e.type === 'gain_coins_growing') coins += e.amount + f.growth;
       }
       v += coins;
-    } else if (c.category === 'attack') v += attackYield(me, c, data) / k;
+    } else if (isAttacker(c)) v += attackYield(me, c, data) / k;
   }
   for (const f of them.facilities) {
     const c = data.cards[f.cardId];
@@ -143,6 +143,12 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
       if (spoils) ev += countOwned(me, data, 'spoils') * faceProb(myFaces, spoils.faces);
       return ev * R * w.attack;
     }
+    case 'raid': {
+      // 1回きり：残りの手番のうちに発動する確率 × ダメージ
+      const p = faceProb(myFaces, card.faces);
+      const fire = 1 - Math.pow(1 - p, Math.max(1, R));
+      return ((fire * attackYield(me, card, data)) / k) * w.attack;
+    }
     case 'counter': {
       const p = faceProb(oppFaces, card.faces);
       let ev = 0;
@@ -151,7 +157,7 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
         else if (e.type === 'heal') ev += (me.hp < me.maxHp ? e.amount : e.amount / 2) / k;
         else if (e.type === 'steal_coins') ev += Math.min(e.amount, 2);
         else if (e.type === 'reduce_damage') {
-          const oppHasAttack = them.facilities.some((f) => data.cards[f.cardId].category === 'attack');
+          const oppHasAttack = them.facilities.some((f) => isAttacker(data.cards[f.cardId]));
           ev += (oppHasAttack ? e.amount : 1) / k;
         }
       }
@@ -185,7 +191,7 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
             let dmg = 0;
             for (const f of me.facilities) {
               const c = data.cards[f.cardId];
-              if (c.category === 'attack') dmg += faceProb(myFaces, c.faces) * attackYield(me, c, data);
+              if (isAttacker(c)) dmg += faceProb(myFaces, c.faces) * attackYield(me, c, data);
             }
             v += ((dmg * (a - 1)) / k) * n;
             break;
@@ -238,7 +244,7 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
             let dmg = 0;
             for (const f of them.facilities) {
               const c = data.cards[f.cardId];
-              if (c.category === 'attack') dmg += faceProb(oppFaces, c.faces) * attackYield(them, c, data);
+              if (isAttacker(c)) dmg += faceProb(oppFaces, c.faces) * attackYield(them, c, data);
             }
             v += ((dmg / 2) / k) * n;
             break;

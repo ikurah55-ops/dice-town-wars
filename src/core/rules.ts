@@ -1,7 +1,7 @@
 // 戦闘ルール本体。UIに依存しない状態機械。
 // applyAction は state を直接書き換える（UI側は structuredClone してから渡す）。
 
-import { countOwned, levelMul } from './cards';
+import { countOwned, isAttacker, levelMul } from './cards';
 import { envBaseIncome, envBattleStart, envCost, envFaceWeight, envFacility, envLongBattleTurn, envMagicUses } from './env';
 import { nextRandom } from './rng';
 import type {
@@ -419,6 +419,7 @@ function resolveRoll(state: BattleState, data: GameData) {
 
   // 2. 自分の施設（経済 → 攻撃）
   let attackTotal = 0;
+  const spent: number[] = []; // 発動して壊れる奇襲カード（uid）
   for (const f of me.facilities) {
     const card = data.cards[f.cardId];
     if (!card.faces?.includes(face)) continue;
@@ -436,13 +437,14 @@ function resolveRoll(state: BattleState, data: GameData) {
       const raw = envFacility(state, base * levelMul(data, me, card), { card, face, kind: 'coin' }) * econMult;
       const coins = gainCoins(me, raw);
       log(state, side, `${card.name}：+${fmtCoins(raw)}コイン`, 'coin', { kind: 'coin', side, amount: coins, raw, card: card.id });
-    } else if (card.category === 'attack') {
+    } else if (isAttacker(card)) {
       for (const e of card.effects) {
         if (e.type !== 'deal_damage') continue;
         const dmg = Math.round(envFacility(state, e.amount * levelMul(data, me, card), { card, face, kind: 'damage' }) * atkMult);
         attackTotal += dmg;
         log(state, side, `${card.name}：${dmg}ダメージ`, 'damage', { kind: 'attack', side, amount: dmg, card: card.id });
       }
+      if (card.category === 'raid') spent.push(f.uid);
     }
   }
   if (attackTotal > 0 && halveCard) {
@@ -457,6 +459,13 @@ function resolveRoll(state: BattleState, data: GameData) {
     damage(state, other, dealt);
     log(state, side, `${them.name}に合計${dealt}ダメージ！`, 'damage', { kind: 'hit', target: other, amount: dealt, blocked: reduced });
     if (checkWinner(state)) return;
+  }
+  // 奇襲カードは発動したら壊れる（ダメージを与えた後で盤面から取り除く）
+  if (spent.length > 0) {
+    const gone = new Map<string, number>();
+    for (const f of me.facilities) if (spent.includes(f.uid)) gone.set(f.cardId, (gone.get(f.cardId) ?? 0) + 1);
+    me.facilities = me.facilities.filter((f) => !spent.includes(f.uid));
+    for (const [id, n] of gone) log(state, side, `${data.cards[id].name}${n > 1 ? `×${n}` : ''}は役目を終えて壊れた`, 'info', { kind: 'spent', side, card: id, count: n });
   }
   if (attackTotal === 0 && !me.facilities.some((f) => data.cards[f.cardId].faces?.includes(face))) {
     log(state, side, '発動する施設なし', 'info');

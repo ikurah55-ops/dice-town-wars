@@ -67,8 +67,8 @@ function main() {
   const turns: number[] = [];
   let longBattle = 0;
   let firstWins = 0;
-  const cardStats: Record<string, { games: number; wins: number; boughtGames: number }> = {};
-  for (const c of loadoutCandidates(data)) cardStats[c.id] = { games: 0, wins: 0, boughtGames: 0 };
+  const cardStats: Record<string, { games: number; wins: number; boughtGames: number; boughtWins: number }> = {};
+  for (const c of loadoutCandidates(data)) cardStats[c.id] = { games: 0, wins: 0, boughtGames: 0, boughtWins: 0 };
   const baseBuy: Record<string, number> = {};
 
   const t0 = Date.now();
@@ -86,7 +86,10 @@ function main() {
         const st = cardStats[id];
         st.games++;
         if (s.winner === side) st.wins++;
-        if (p.bought[id]) st.boughtGames++;
+        if (p.bought[id]) {
+          st.boughtGames++;
+          if (s.winner === side) st.boughtWins++;
+        }
       }
       for (const id of data.config.marketBaseCards) if (p.bought[id]) baseBuy[id] = (baseBuy[id] ?? 0) + 1;
     }
@@ -108,11 +111,11 @@ function main() {
   }
   console.log(`長期戦ダメージ発生率 ${pct(longBattle / games)}`);
   console.log(`先攻の勝率 ${pct(firstWins / games)}`);
-  console.log('\nカード別（選んだ側の勝率 / 選んだ試合での購入率）:');
+  console.log('\nカード別（選んだ側の勝率 / 選んだ試合での購入率 / 買った側の勝率）:');
   const rows = Object.entries(cardStats).sort((x, y) => y[1].wins / y[1].games - x[1].wins / x[1].games);
   for (const [id, st] of rows) {
     const name = data.cards[id].name;
-    console.log(`  ${name.padEnd(8, '　')} 勝率 ${pct(st.wins / st.games).padStart(6)}  購入率 ${pct(st.boughtGames / st.games).padStart(6)}`);
+    console.log(`  ${name.padEnd(8, '　')} 勝率 ${pct(st.wins / st.games).padStart(6)}  購入率 ${pct(st.boughtGames / st.games).padStart(6)}  買った側 ${pct(st.boughtWins / Math.max(1, st.boughtGames)).padStart(6)}`);
   }
   console.log('\n基本カード購入率（1人あたり）:');
   for (const id of data.config.marketBaseCards) {

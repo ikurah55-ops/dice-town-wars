@@ -1,6 +1,6 @@
 // ===== データ定義（JSON の形） =====
 
-export type CardCategory = 'economy' | 'attack' | 'counter' | 'magic';
+export type CardCategory = 'economy' | 'attack' | 'counter' | 'magic' | 'raid'; // raid＝奇襲：攻撃と同じダメージだが、発動すると壊れる
 export type MagicTiming = 'turn_start' | 'own_roll' | 'opp_roll' | 'turn_end';
 
 /** 効果は「種類＋パラメータ」。数値はすべて JSON 側 */
@@ -226,6 +226,7 @@ export type Fx =
   | { kind: 'zap'; target: Side; amount: number; card: string } // カウンターのダメージ
   | { kind: 'income'; side: Side; amount: number; card: string } // 徴税令つきの収入（合計）
   | { kind: 'destroy'; side: Side; target: Side; card: string } // 破城槌で壊した施設
+  | { kind: 'spent'; side: Side; card: string; count: number } // 奇襲カードが発動して壊れた
   | { kind: 'merc'; side: Side; target: Side; coins: number; amount: number; card: string } // 傭兵契約
   | { kind: 'storm'; amounts: [number, number] } // 長期戦ダメージ
   | { kind: 'built'; side: Side; cards: string[] } // その手番に建てた施設

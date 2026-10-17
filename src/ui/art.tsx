@@ -496,6 +496,64 @@ const ART: Record<string, ReactNode> = {
     </>
   ),
 
+  // 奇襲：火薬樽（導火線に火のついた樽）
+  powder_keg: (
+    <>
+      <Bg fill="dt-sky-war" />
+      <path d="M0 60 Q40 54 80 58 T120 56 V80 H0Z" fill="#1a0a06" />
+      <Glow x={60} y={46} r={40} c="fire" />
+      <ellipse cx="60" cy="70" rx="22" ry="4" fill="#000" opacity="0.4" />
+      <path d="M42 36 Q40 52 42 68 H78 Q80 52 78 36Z" fill="url(#dt-wood)" stroke="#2a1408" strokeWidth="1.5" />
+      <ellipse cx="60" cy="36" rx="18" ry="5" fill="#5a3014" stroke="#2a1408" strokeWidth="1.5" />
+      {[44, 52, 62].map((y) => (
+        <path key={y} d={`M41 ${y} Q60 ${y + 3} 79 ${y}`} stroke="#3a3436" strokeWidth="2.5" fill="none" />
+      ))}
+      <path d="M60 34 Q64 24 72 20" stroke="#c8b090" strokeWidth="1.5" fill="none" />
+      <Glow x={73} y={19} r={10} c="gold" />
+      <Sparkle x={73} y={19} s={1.1} />
+      <Particles seed={31} n={14} box={[62, 6, 90, 26]} r={[0.3, 0.8]} fill="#ffd27a" />
+      <Vig />
+    </>
+  ),
+  // 奇襲：攻城塔（城壁に横付けする木の塔）
+  siege_tower: (
+    <>
+      <Bg fill="dt-sky-war" />
+      <path d="M80 70 V26 H86 V20 H92 V26 H100 V20 H106 V26 H112 V20 H120 V70Z" fill="#2a1a16" />
+      <Glow x={100} y={30} r={20} c="fire" />
+      <Flame x={104} y={28} s={0.8} />
+      <path d="M0 66 Q60 60 120 66 V80 H0Z" fill="#1a0a06" />
+      <path d="M36 70 L40 14 H66 L70 70Z" fill="url(#dt-wood)" stroke="#2a1408" strokeWidth="1.5" />
+      {[24, 36, 48, 60].map((y) => (
+        <line key={y} x1={38} y1={y} x2={68} y2={y} stroke="#3a1e0a" strokeWidth="1.5" />
+      ))}
+      <path d="M66 18 L82 26 L80 30 L66 24Z" fill="#5a3014" stroke="#2a1408" />
+      <path d="M44 10 L53 4 L62 10Z" fill="#7a1a12" />
+      <circle cx="44" cy="72" r="5" fill="#2a1408" stroke="#5a3014" strokeWidth="1.5" />
+      <circle cx="62" cy="72" r="5" fill="#2a1408" stroke="#5a3014" strokeWidth="1.5" />
+      <Vig />
+    </>
+  ),
+  // 奇襲：決死隊（槍を構えて突撃する一団）
+  forlorn_hope: (
+    <>
+      <Bg fill="dt-sky-war" />
+      <Glow x={86} y={30} r={40} c="fire" />
+      <path d="M0 58 Q50 50 120 58 V80 H0Z" fill="#1a0a06" />
+      {[14, 28, 42, 56, 70].map((x, i) => (
+        <g key={x} transform={`translate(${x} ${48 - (i % 2) * 3})`}>
+          <path d="M0 0 Q4 -6 8 0 V16 H0Z" fill="#141010" />
+          <circle cx="4" cy="-3" r="3.2" fill="url(#dt-iron)" />
+          <line x1="6" y1="6" x2="34" y2="-14" stroke="#8a6a4a" strokeWidth="1.4" />
+          <path d="M34 -14 L39 -18 L36 -12Z" fill="url(#dt-steel)" />
+        </g>
+      ))}
+      <line x1="22" y1="44" x2="22" y2="14" stroke="#5a3014" strokeWidth="1.5" />
+      <path d="M22 14 Q32 12 40 18 Q32 22 22 22Z" fill="#a8241a" />
+      <Particles seed={47} n={18} box={[60, 4, 118, 40]} r={[0.3, 0.9]} fill="#ffb060" />
+      <Vig />
+    </>
+  ),
   catapult: (
     <>
       <Bg fill="dt-sky-war" />
@@ -1400,6 +1458,13 @@ export function TypeIcon({ category }: { category: CardCategory }) {
       )}
       {category === 'counter' && <path d="M4 4 H16 V10 Q16 15 10 17 Q4 15 4 10Z" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round" />}
       {category === 'magic' && <path d="M10 2.5 L12 8 L17.5 8.5 L13.2 12 L14.6 17.5 L10 14.5 L5.4 17.5 L6.8 12 L2.5 8.5 L8 8Z" fill="#fff" />}
+      {/* 奇襲：爆発 */}
+      {category === 'raid' && (
+        <>
+          <path d="M10 1.5 L11.8 6.6 L16.6 4 L14.2 8.6 L18.5 10 L14.2 11.6 L16.4 16.2 L11.6 13.6 L10 18.5 L8.4 13.6 L3.6 16.2 L5.8 11.6 L1.5 10 L5.8 8.6 L3.4 4 L8.2 6.6Z" fill="#fff" />
+          <circle cx="10" cy="10" r="2.6" fill="#d2691e" />
+        </>
+      )}
     </svg>
   );
 }

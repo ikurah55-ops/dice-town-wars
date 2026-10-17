@@ -25,7 +25,7 @@ import { sfx, unlockAudio, useBgm } from './audio';
 import { Options } from './screens/Options';
 import { aiWithLevel, hasSeen, markSeen, resetTutorials } from './settings';
 import { Tutorial, type TutStep } from './Tutorial';
-import { magicSteps, newCardSteps, TUT, upgradeIntroSteps, upgradeScreenSteps } from './tutorials';
+import { magicSteps, newCardSteps, TUT, upgradeIntroSteps, upgradeScreenSteps, raidSteps } from './tutorials';
 import { Battle } from './screens/Battle';
 import { Build, type BuildResult } from './screens/Build';
 import { Result } from './screens/Result';
@@ -277,6 +277,11 @@ export function App() {
       {screen.name === 'upgrade' && hasSeen(TUT.upgradeScreen) && !hasSeen(TUT.magic) && unlockableCards(data, save).some((c) => c.category === 'magic') && (
         <Tutorial key="magic" steps={magicSteps(cfg, data.config, storyMaxMagic(cfg, save))} onDone={() => doneTut(TUT.magic)} />
       )}
+      {screen.name === 'upgrade' &&
+        hasSeen(TUT.upgradeScreen) &&
+        (hasSeen(TUT.magic) || !unlockableCards(data, save).some((c) => c.category === 'magic')) &&
+        !hasSeen(TUT.raid) &&
+        unlockableCards(data, save).some((c) => c.category === 'raid') && <Tutorial key="raid" steps={raidSteps()} onDone={() => doneTut(TUT.raid)} />}
 
       {options && (
         <Options

@@ -356,6 +356,8 @@ export async function playFx(ctx: FxContext, fx: Fx, onImpactRaw: () => void): P
       return taxIncome(ctx, fx, onImpact);
     case 'destroy':
       return ramDestroy(ctx, fx);
+    case 'spent':
+      return raidSpent(ctx, fx);
     case 'merc':
       return mercenary(ctx, fx, onImpact);
     case 'storm':
@@ -528,6 +530,17 @@ async function ramDestroy(ctx: FxContext, fx: Extract<Fx, { kind: 'destroy' }>) 
   ram.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 200, fill: 'forwards' }).finished.then(() => ram.remove());
   popText(ctx, { x: to.x, y: to.y - 8 }, `${ctx.data.cards[fx.card].name} 破壊！`, 'fx-dmg', 24, 1100);
   await sleep(900);
+}
+
+/** 奇襲カード：発動し終えた施設が崩れて消える */
+async function raidSpent(ctx: FxContext, fx: Extract<Fx, { kind: 'spent' }>) {
+  const chip = chipEl(ctx, fx.side, fx.card);
+  const at = center(ctx, chip, hpPt(ctx, fx.side));
+  sfx('destroy');
+  burst(ctx, at, 'fx-burst-raid', 90, 450);
+  chip?.classList.add('fx-crumble');
+  popText(ctx, { x: at.x, y: at.y - 8 }, `${ctx.data.cards[fx.card].name}${fx.count > 1 ? `×${fx.count}` : ''} 壊れた`, 'fx-raid', 18, 1000);
+  await sleep(750);
 }
 
 /** 傭兵契約：コインが剣に変わって相手に降り注ぐ */

@@ -39,7 +39,7 @@ export function Upgrade({ data, save, onChange, onBack }: { data: GameData; save
   const UpCard = ({ card, cost, label, onBuy, extra, unlock }: { card: CardDef; cost: number | null; label: string; onBuy?: () => void; extra?: string; unlock?: boolean }) => (
     <div
       className={`up-card ${unlock ? 'up-unlock' : ''} ${flash?.key === card.id ? 'just-upgraded' : ''}`}
-      data-tut={unlock && card.category === 'magic' ? 'magic' : undefined}
+      data-tut={unlock && (card.category === 'magic' || card.category === 'raid') ? card.category : undefined}
     >
       <CardView card={card} data={data} level={card.category !== 'magic' ? cardLevel(save, card.id) : undefined} badge={extra} />
       {cost === null ? (

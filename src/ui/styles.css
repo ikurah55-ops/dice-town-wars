@@ -12,6 +12,7 @@
   --atk: #b6372a;
   --ctr: #2f6aa8;
   --mag: #7a4bb0;
+  --raid: #d2691e;
   --me: #3f8a3a;
   --enemy: #b6372a;
   --radius: 10px;
@@ -352,6 +353,9 @@ button {
 }
 .cat-magic {
   --cat: var(--mag);
+}
+.cat-raid {
+  --cat: var(--raid);
 }
 .card-top {
   display: flex;
@@ -1356,6 +1360,9 @@ button {
 .fx-atk {
   color: #ffb08a;
 }
+.fx-raid {
+  color: #ffc58a;
+}
 .fx-dmg {
   color: #ff4a34;
   -webkit-text-stroke: 1.5px #fff1e0;
@@ -1399,6 +1406,9 @@ button {
 }
 .fx-burst-atk {
   background: radial-gradient(circle, #fffbe0 0%, #ffb02e 25%, rgba(224, 56, 26, 0.75) 50%, rgba(224, 56, 26, 0) 70%);
+}
+.fx-burst-raid {
+  background: radial-gradient(circle, #fff3d6 0%, #ffa94d 30%, rgba(210, 105, 30, 0.7) 52%, rgba(210, 105, 30, 0) 70%);
 }
 .fx-burst-ctr {
   background: radial-gradient(circle, #ffffff 0%, #9ae6ff 25%, rgba(47, 106, 168, 0.7) 50%, rgba(47, 106, 168, 0) 70%);
