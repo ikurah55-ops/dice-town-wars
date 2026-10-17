@@ -49,7 +49,7 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | `powder_keg.jpg` | 火薬樽 | （作成済み） |
 | `siege_tower.jpg` | 攻城塔 | （作成済み） |
 | `forlorn_hope.jpg` | 決死隊 | （作成済み） |
-| `assassin.jpg` | 暗殺者 | A hooded assassin crouching on a moonlit castle rooftop at night, a thin dagger glinting, a red scarf fluttering, sleeping torch-lit courtyard far below, cold blue moonlight. |
+| `assassin.jpg` | 暗殺者 | （作成済み） |
 | `fire_arrows.jpg` | 火矢の斉射 | A volley of flaming arrows arcing across a dark night sky toward a wooden palisade fort, trails of fire and embers, archers silhouetted in the foreground, smoke rising where they land. |
 | `night_raid.jpg` | 夜襲隊 | A small band of raiders in dark cloaks creeping toward a castle under a moonless sky, carrying torches shielded by their hands, scaling ropes and hooks, tense and stealthy mood, faint firelight on stone walls. |
 
