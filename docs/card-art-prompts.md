@@ -82,4 +82,4 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | `odd_charm.jpg` | 奇数の護符 | A glowing paper talisman inscribed with a golden-red sigil, floating among three ivory dice showing one, three and five, warm golden magical light, dusk sky. |
 | `fickle_wind.jpg` | 天変地異 | A cataclysmic sky over a medieval valley: swirling storm clouds, lightning striking the ground, the earth cracking open, a sudden blizzard on one side and blazing sun on the other, the weather and seasons changing all at once. |
 | `ward.jpg` | 守護の結界 | A shimmering blue magical dome barrier protecting a small stone castle at night, enemy arrows bouncing off the glowing shield, sparkles of light. |
-| `unbreakable.jpg` | 不壊の加護 | A gunpowder keg and a wooden siege tower wrapped in glowing violet runic chains of light, a mystical seal circle on the ground beneath them, the wood shining as if unbreakable, dark battlefield with smoke behind. |
+| `unbreakable.jpg` | 不壊の加護 | （作成済み） |
