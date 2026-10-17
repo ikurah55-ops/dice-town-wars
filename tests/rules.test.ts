@@ -34,7 +34,7 @@ function give(s: BattleState, side: Side, ...ids: string[]) {
 
 describe('データ', () => {
   it('全データが読み込める', () => {
-    expect(Object.keys(defaultData.cards)).toHaveLength(38);
+    expect(Object.keys(defaultData.cards)).toHaveLength(39);
     expect(defaultData.config.playerMaxHp).toBe(180);
     expect(defaultData.bosses.length).toBeGreaterThan(0);
   });
@@ -108,6 +108,29 @@ describe('奇襲', () => {
     // 6で発動した火薬樽2枚だけ壊れる。投石機と、5の攻城塔は残る
     expect(s.players[0].facilities.map((f) => f.cardId).sort()).toEqual(['catapult', 'siege_tower', 'wheat']);
     expect(s.log.some((l) => l.fx?.kind === 'spent' && l.fx.card === 'powder_keg' && l.fx.count === 2)).toBe(true);
+  });
+  it('不壊の加護：自分の手番3回のあいだ奇襲カードが壊れずダメージ1.3倍、切れたら壊れる', () => {
+    const s = setup('fixed6', 'fixed1', ['unbreakable', 'powder_keg', 'orchard', 'mill']);
+    s.players[1].hp = s.players[1].maxHp = 999; // 4回撃っても倒れないように
+    applyAction(s, data, { type: 'roll' });
+    s.players[0].coins = 20;
+    applyAction(s, data, { type: 'buy', cardId: 'unbreakable' });
+    give(s, 0, 'powder_keg');
+    const kegs = () => s.players[0].facilities.filter((f) => f.cardId === 'powder_keg').length;
+    for (let i = 0; i < 3; i++) {
+      applyAction(s, data, { type: 'end_turn' });
+      applyAction(s, data, { type: 'roll' }); // 相手
+      applyAction(s, data, { type: 'end_turn' });
+      const hp = s.players[1].hp;
+      applyAction(s, data, { type: 'roll' }); // 自分：6で火薬樽が発動
+      expect(kegs()).toBe(1);
+      expect(hp - s.players[1].hp).toBe(Math.round(kegDmg() * 1.3));
+    }
+    applyAction(s, data, { type: 'end_turn' });
+    applyAction(s, data, { type: 'roll' });
+    applyAction(s, data, { type: 'end_turn' });
+    applyAction(s, data, { type: 'roll' }); // 効果切れ：今度は壊れる
+    expect(kegs()).toBe(0);
   });
   it('見張り塔で軽減される', () => {
     const towerDmg = (data.cards.siege_tower.effects[0] as { amount: number }).amount;

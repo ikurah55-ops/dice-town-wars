@@ -110,6 +110,9 @@
   { "id": "fickle_wind", "name": "天変地異", "category": "magic", "cost": 1, "timing": "turn_end",
     "effects": [{"type": "change_environment"}],
     "story": {"unlockAfterStage": 17, "unlockExp": 5, "levelable": false, "levelCost": [], "bossTheme": null} },
+  { "id": "unbreakable", "name": "不壊の加護", "category": "magic", "cost": 2, "timing": "own_roll",
+    "effects": [{"type": "keep_raids", "amount": 1.3}],
+    "story": {"unlockAfterStage": 18, "unlockExp": 2, "levelable": false, "levelCost": [], "bossTheme": null} },
   { "id": "ward", "name": "守護の結界", "category": "magic", "cost": 8, "timing": "opp_roll",
     "effects": [{"type": "halve_attack_damage"}],
     "story": {"unlockAfterStage": 7, "unlockExp": 4, "levelable": false, "levelCost": [], "bossTheme": null} }

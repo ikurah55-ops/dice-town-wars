@@ -379,8 +379,10 @@ function resolveRoll(state: BattleState, data: GameData) {
   for (const { e } of magicsWith(me, data, 'attack_multiplier')) atkMult *= (e as { amount: number }).amount;
 
   const halveCard = magicsWith(them, data, 'halve_attack_damage')[0]?.card ?? null;
-  // 補給部隊：残り回数を減らす前に確認する（最後の1回でも効く）
-  const keepRaidCard = magicsWith(me, data, 'keep_raids')[0]?.card ?? null;
+  // 不壊の加護：残り回数を減らす前に確認する（最後の1回でも効く）
+  const keepRaid = magicsWith(me, data, 'keep_raids')[0] ?? null;
+  const keepRaidCard = keepRaid?.card ?? null;
+  const raidMult = keepRaid ? (keepRaid.e as { amount: number }).amount : 1;
 
   // サイコロ系の魔法の残り回数を減らす（自分の own_roll、相手の opp_roll）
   for (const m of [...me.magics]) if (data.cards[m.cardId].timing === 'own_roll') consume(me, m, data);
@@ -442,7 +444,7 @@ function resolveRoll(state: BattleState, data: GameData) {
     } else if (isAttacker(card)) {
       for (const e of card.effects) {
         if (e.type !== 'deal_damage') continue;
-        const dmg = Math.round(envFacility(state, e.amount * levelMul(data, me, card), { card, face, kind: 'damage' }) * atkMult);
+        const dmg = Math.round(envFacility(state, e.amount * levelMul(data, me, card), { card, face, kind: 'damage' }) * atkMult * (card.category === 'raid' ? raidMult : 1));
         attackTotal += dmg;
         log(state, side, `${card.name}：${dmg}ダメージ`, 'damage', { kind: 'attack', side, amount: dmg, card: card.id });
       }

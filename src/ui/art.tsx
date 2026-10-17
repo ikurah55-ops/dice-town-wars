@@ -518,6 +518,23 @@ const ART: Record<string, ReactNode> = {
       <Vig />
     </>
   ),
+  // 魔法：不壊の加護（光の鎖に守られた火薬樽）
+  unbreakable: (
+    <>
+      <rect width="120" height="80" fill="#140e22" />
+      <Glow x={60} y={42} r={42} c="purple" />
+      <path d="M46 30 Q44 44 46 58 H74 Q76 44 74 30Z" fill="url(#dt-wood)" stroke="#2a1408" strokeWidth="1.2" />
+      <ellipse cx="60" cy="30" rx="14" ry="4" fill="#5a3014" />
+      {[38, 48].map((y) => (
+        <path key={y} d={`M45 ${y} Q60 ${y + 3} 75 ${y}`} stroke="#3a3436" strokeWidth="2" fill="none" />
+      ))}
+      <circle cx="60" cy="44" r="24" fill="none" stroke="#d8b8ff" strokeWidth="1.2" strokeDasharray="3 2" opacity="0.8" />
+      <Sparkle x={36} y={24} s={0.8} fill="#e8d8ff" />
+      <Sparkle x={86} y={60} s={0.7} fill="#e8d8ff" />
+      <Particles seed={61} n={20} box={[30, 10, 90, 72]} r={[0.3, 0.8]} fill="#d8b8ff" />
+      <Vig />
+    </>
+  ),
   // 奇襲：暗殺者（月夜の屋根の上の刺客）
   assassin: (
     <>

@@ -22,7 +22,7 @@ export type Effect =
   | { type: 'restrict_faces'; faces: number[] } // 自分のサイコロがこの目だけになる
   | { type: 'change_environment' } // 環境効果をランダムに変える（効果中だけ）
   | { type: 'halve_attack_damage' } // 受ける攻撃カードのダメージを半分（切り上げ）
-  | { type: 'keep_raids' }; // 自分の奇襲カードが発動しても壊れない
+  | { type: 'keep_raids'; amount: number }; // 自分の奇襲カードが発動しても壊れず、ダメージが amount 倍
 
 export interface CardDef {
   id: string;

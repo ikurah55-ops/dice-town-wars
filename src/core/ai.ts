@@ -250,6 +250,7 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
               const later = Math.max(1, R - 1);
               const refire = 1 - Math.pow(1 - p, later); // 残ったあと、また発動する確率
               saved += (fireDuring * refire * attackYield(me, c, data)) / k;
+              saved += (p * n * attackYield(me, c, data) * (('amount' in e ? e.amount : 1) - 1)) / k; // 効果中のダメージ増加
             }
             v += saved;
             break;
