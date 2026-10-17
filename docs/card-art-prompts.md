@@ -40,7 +40,7 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 | `cannon.jpg` | 大砲台 | A massive bronze-banded iron cannon on a stone bastion firing, huge muzzle flash and billowing smoke, a cannonball streaking away, gunners shielding their faces. |
 | `spearmen.jpg` | 槍兵隊 | A disciplined phalanx of medieval spearmen in blue tabards holding a wall of kite shields, long spears angled forward, golden-hour light, dusty battlefield, banners behind them. |
 | `knights.jpg` | 騎士団 | A charge of heavily armored knights on horseback with lowered lances and red pennants, thundering across a field at sunset, dust clouds, castle on a distant hill. |
-| `crossbows.jpg` | 弩兵隊 | A row of medieval crossbowmen kneeling behind the crenellations of a castle wall, heavy crossbows braced and aimed, bolts loaded, pavise shields beside them, an enemy army approaching below in the dusk haze. |
+| `crossbows.jpg` | 弩兵隊 | （作成済み） |
 
 ### 奇襲カード（鋼色。一度発動すると壊れる大技）
 
