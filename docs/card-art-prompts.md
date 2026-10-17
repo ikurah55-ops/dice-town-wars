@@ -45,7 +45,7 @@ Highly detailed digital painting, realistic medieval fantasy, painterly realism 
 
 | ファイル名 | カード | 題材 |
 |---|---|---|
-| `powder_keg.jpg` | 火薬樽 | A heavy oak gunpowder barrel bound with iron hoops placed at the foot of a castle gate at night, its lit fuse hissing with bright orange sparks, a few more kegs stacked behind, smoke curling, tense moment before the blast. |
+| `powder_keg.jpg` | 火薬樽 | （作成済み） |
 | `siege_tower.jpg` | 攻城塔 | （作成済み） |
 | `forlorn_hope.jpg` | 決死隊 | （作成済み） |
 
