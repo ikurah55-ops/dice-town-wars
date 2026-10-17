@@ -292,6 +292,13 @@ export function Battle({
         </span>
         {state.environment && (
           <button className="env-chip" onClick={() => setEnvOpen(true)} aria-label="環境効果の説明">
+            {envBgImg ? (
+              <img className="env-chip-img" src={envBgImg} alt="" draggable={false} />
+            ) : (
+              <span className="env-chip-icon" aria-hidden="true">
+                {state.environment.icon ?? '🌐'}
+              </span>
+            )}
             {state.environment.name}
           </button>
         )}
@@ -315,6 +322,10 @@ export function Battle({
           {state.phase === 'over' ? (state.winner === 0 ? '勝利！' : '敗北…') : state.active === 0 ? 'あなたの手番' : `${cpu.name}の手番`}
         </div>
         <Die value={rolling ? rollFace : (preview ?? state.lastRoll)} rolling={rolling} size={56} enemy={state.active === 1} />
+        {/* 「デッキを見る」は、サイコロを振るなどの決定ボタンと押し間違えないよう、ログをはさんだ上側に置く */}
+        <button className="btn btn-ghost btn-deck" onClick={() => setMarketOpen(true)}>
+          デッキを見る
+        </button>
         <button className="side-log" onClick={() => setLogOpen(true)} aria-label="ログを見る">
           {state.log.slice(-3).map((l, i) => (
             <span key={state.log.length - 3 + i} className={`log-line kind-${l.kind} side-${l.side ?? 'x'}`}>
@@ -323,9 +334,6 @@ export function Battle({
           ))}
         </button>
         <div className="side-actions">
-          <button className="btn btn-ghost btn-side" onClick={() => setMarketOpen(true)}>
-            デッキを見る
-          </button>
           {myTurn && state.phase === 'roll' && (
             <button className="btn btn-primary btn-side" disabled={busy || intro.length > 0} onClick={() => void perform({ type: 'roll' })}>
               サイコロを振る

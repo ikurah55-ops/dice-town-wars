@@ -984,6 +984,14 @@ button {
   flex-direction: column;
   gap: 6px;
 }
+/* 「デッキを見る」は決定ボタンより控えめに（押し間違え防止のため上側に置く） */
+.btn-deck {
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 8px;
+  font-size: 13px;
+  border-radius: 10px;
+}
 .btn-side {
   width: 100%;
   min-height: 40px;
@@ -1738,14 +1746,35 @@ button {
 /* 環境効果 */
 .env-chip {
   flex: none;
-  font-size: 12px;
-  font-weight: 800;
-  color: #f0d8ff;
-  background: rgba(122, 75, 176, 0.45);
-  border: 1.5px solid #b48ae8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #f6e8ff;
+  background: rgba(122, 75, 176, 0.6);
+  border: 2px solid #c9a3f5;
   border-radius: 999px;
-  padding: 2px 10px;
+  padding: 2px 14px 2px 3px;
   white-space: nowrap;
+  box-shadow: 0 0 10px rgba(180, 138, 232, 0.45);
+}
+/* 環境効果の絵を小さな丸で添える */
+.env-chip-img,
+.env-chip-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 233, 176, 0.7);
+}
+.env-chip-icon {
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.3);
 }
 .env-box {
   display: flex;
