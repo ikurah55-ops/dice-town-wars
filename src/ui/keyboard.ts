@@ -27,7 +27,8 @@ function onKeyDown(e: KeyboardEvent) {
     handled = press([
       '.tut-skip', // チュートリアルを飛ばす
       '.modal .modal-close', // ウィンドウを閉じる
-      '.market .market-head .btn-ghost', // 市場を閉じて盤面へ
+      '.market .market-head .btn-board', // 市場を閉じて盤面へ（「選び直す」は押さない）
+      '.market-enemy .market-head .btn-ghost', // 相手のデッキを閉じる
       '.btn-back',
       '.map-back',
       '.battle .bar-enemy .btn-icon', // 戦闘中はメニュー（リタイアなど）を開く

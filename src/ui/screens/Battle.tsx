@@ -110,7 +110,7 @@ export function Battle({
   const [faceTarget, setFaceTarget] = useState<string | null>(null); // 封印・沈黙の目指定
   const [faceDetail, setFaceDetail] = useState<number | null>(null);
   const [cardDetail, setCardDetail] = useState<string | null>(null);
-  const [buyConfirm, setBuyConfirm] = useState<string | null>(null); // 購入の確認中のカード（「やめる」で戻れる）
+  const [buyStart, setBuyStart] = useState<BattleState | null>(null); // 自分の購入フェーズが始まった時点の状態（「選び直す」で戻す）
   const [logOpen, setLogOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -229,6 +229,13 @@ export function Battle({
     setMarketOpen(state.active === 0 && state.phase === 'buy');
   }, [state.active, state.phase]);
 
+  // 購入フェーズに入った時点の状態を覚えておく（乱数の状態も含むので、選び直しても結果は変わらない）
+  useEffect(() => {
+    const inBuy = state.active === 0 && state.phase === 'buy';
+    if (!inBuy) setBuyStart(null);
+    else setBuyStart((b) => (b && b.turn === state.turn ? b : state));
+  }, [state]);
+
   // 決着
   useEffect(() => {
     if (state.phase !== 'over') return;
@@ -264,11 +271,6 @@ export function Battle({
       setToast(err === 'コイン不足' ? `コインが足りません（あと${data.cards[id].cost - me.coins}）` : err === '効果中' ? '効果中は重ねて買えません' : err === '再使用待ち' ? `この魔法はあと${me.cooldowns[id]}ターン買えません` : err);
       return;
     }
-    setBuyConfirm(id); // すぐには買わず、確認を出す
-  };
-
-  const confirmBuy = (id: string) => {
-    setBuyConfirm(null);
     if (data.cards[id].effects.some((e) => e.type === 'ban_face')) {
       setFaceTarget(id);
       return;
@@ -440,9 +442,25 @@ export function Battle({
           <div className="market-head">
             <span className="market-title">{canBuy ? '購入フェーズ' : 'デッキ（市場）'}</span>
             <span className="coins-big">🪙 {coinTotal(me).toFixed(1)}</span>
-            <button className="btn btn-small btn-ghost" onClick={() => setMarketOpen(false)}>
+            <button className="btn btn-small btn-ghost btn-board" onClick={() => setMarketOpen(false)}>
               盤面を見る
             </button>
+            {canBuy && (
+              <button
+                className="btn btn-small btn-ghost btn-redo"
+                disabled={busy || !buyStart || buyStart === state}
+                onClick={() => {
+                  if (!buyStart) return;
+                  // この購入フェーズで買ったものをすべて取り消して、買う前に戻す
+                  sfx('page');
+                  stateRef.current = buyStart;
+                  setState(buyStart);
+                  setToast('購入を取り消しました');
+                }}
+              >
+                選び直す
+              </button>
+            )}
             {canBuy && (
               <button className="btn btn-small btn-primary" disabled={busy} onClick={() => void perform({ type: 'end_turn' })}>
                 手番終了
@@ -487,35 +505,6 @@ export function Battle({
                 onClick={() => void perform({ type: 'destroy', cardId: id })}
               />
             ))}
-          </div>
-        </Modal>
-      )}
-
-      {buyConfirm && canBuy && (
-        <Modal title="このカードを買いますか？">
-          <div className="buy-confirm">
-            <div className="buy-confirm-card">
-              <CardView
-                card={data.cards[buyConfirm]}
-                data={data}
-                level={me.cardLevels[buyConfirm]}
-                cost={cardCost(state, data.cards[buyConfirm])}
-                uses={magicUses(state, data)}
-                stock={me.stock[buyConfirm]}
-              />
-            </div>
-            <div className="buy-confirm-side">
-              <div className="buy-confirm-coins">
-                🪙 {coinTotal(me).toFixed(1)} → <b>{(coinTotal(me) - cardCost(state, data.cards[buyConfirm])).toFixed(1)}</b>
-              </div>
-              <button className="btn btn-primary" disabled={busy} onClick={() => confirmBuy(buyConfirm)}>
-                買う（🪙{cardCost(state, data.cards[buyConfirm])}）
-              </button>
-              {/* modal-close：Esc キーでも「やめる」になる */}
-              <button className="btn btn-ghost modal-close" onClick={() => setBuyConfirm(null)}>
-                やめる
-              </button>
-            </div>
           </div>
         </Modal>
       )}
