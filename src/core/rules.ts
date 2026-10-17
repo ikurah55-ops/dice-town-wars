@@ -379,6 +379,8 @@ function resolveRoll(state: BattleState, data: GameData) {
   for (const { e } of magicsWith(me, data, 'attack_multiplier')) atkMult *= (e as { amount: number }).amount;
 
   const halveCard = magicsWith(them, data, 'halve_attack_damage')[0]?.card ?? null;
+  // 補給部隊：残り回数を減らす前に確認する（最後の1回でも効く）
+  const keepRaidCard = magicsWith(me, data, 'keep_raids')[0]?.card ?? null;
 
   // サイコロ系の魔法の残り回数を減らす（自分の own_roll、相手の opp_roll）
   for (const m of [...me.magics]) if (data.cards[m.cardId].timing === 'own_roll') consume(me, m, data);
@@ -444,7 +446,7 @@ function resolveRoll(state: BattleState, data: GameData) {
         attackTotal += dmg;
         log(state, side, `${card.name}：${dmg}ダメージ`, 'damage', { kind: 'attack', side, amount: dmg, card: card.id });
       }
-      if (card.category === 'raid') spent.push(f.uid);
+      if (card.category === 'raid' && !keepRaidCard) spent.push(f.uid);
     }
   }
   if (attackTotal > 0 && halveCard) {
@@ -466,6 +468,9 @@ function resolveRoll(state: BattleState, data: GameData) {
     for (const f of me.facilities) if (spent.includes(f.uid)) gone.set(f.cardId, (gone.get(f.cardId) ?? 0) + 1);
     me.facilities = me.facilities.filter((f) => !spent.includes(f.uid));
     for (const [id, n] of gone) log(state, side, `${data.cards[id].name}${n > 1 ? `×${n}` : ''}は役目を終えて壊れた`, 'info', { kind: 'spent', side, card: id, count: n });
+  }
+  if (keepRaidCard && me.facilities.some((f) => data.cards[f.cardId].category === 'raid' && data.cards[f.cardId].faces?.includes(face))) {
+    log(state, side, `${keepRaidCard.name}：奇襲カードは壊れずに残った`, 'magic');
   }
   if (attackTotal === 0 && !me.facilities.some((f) => data.cards[f.cardId].faces?.includes(face))) {
     log(state, side, '発動する施設なし', 'info');

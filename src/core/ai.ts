@@ -239,6 +239,21 @@ export function cardValue(state: BattleState, data: GameData, side: Side, card: 
             // 結果は運次第なので、HPで負けているときの逆転の賭けとして使う
             v += me.hp < them.hp * 0.8 ? 3 : 0.3;
             break;
+          case 'keep_raids': {
+            // 効果中に発動した奇襲カードが残る＝その後もう一度撃てる（残り手番のうちに再発動する確率×ダメージ）
+            let saved = 0;
+            for (const f of me.facilities) {
+              const c = data.cards[f.cardId];
+              if (c.category !== 'raid') continue;
+              const p = faceProb(myFaces, c.faces);
+              const fireDuring = 1 - Math.pow(1 - p, n); // 効果中に1回は発動する確率
+              const later = Math.max(1, R - 1);
+              const refire = 1 - Math.pow(1 - p, later); // 残ったあと、また発動する確率
+              saved += (fireDuring * refire * attackYield(me, c, data)) / k;
+            }
+            v += saved;
+            break;
+          }
           case 'halve_attack_damage': {
             // 相手の攻撃カードの1手番あたりの期待ダメージの半分
             let dmg = 0;

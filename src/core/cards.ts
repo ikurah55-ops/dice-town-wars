@@ -80,6 +80,8 @@ export function describeEffect(e: Effect, data: GameData, level = 1): string {
       return '環境効果をランダムに別のものへ変える';
     case 'halve_attack_damage':
       return '受ける攻撃カードのダメージが半分';
+    case 'keep_raids':
+      return '奇襲カードが発動しても壊れない';
     case 'reroll':
       return `1ターンに${a}回、振り直せる`;
   }
@@ -96,6 +98,7 @@ export function describeCard(card: CardDef, data: GameData, level = 1, uses = da
   if (card.category === 'magic') {
     if (card.effects.some((e) => e.type === 'change_environment')) return `購入時：${body}（${uses}ターン）`;
     if (card.timing === 'opp_roll' && card.effects.some((e) => e.type === 'halve_attack_damage')) return `相手の手番${uses}回分、${body}`;
+    if (card.effects.some((e) => e.type === 'keep_raids')) return `自分の手番${uses}回のあいだ、${body}`;
     const t = card.timing ? (TIMING_LABEL[card.timing] ?? '') : '';
     return `${t}${body}（${uses}回）`;
   }

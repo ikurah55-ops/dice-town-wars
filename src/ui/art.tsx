@@ -518,6 +518,53 @@ const ART: Record<string, ReactNode> = {
       <Vig />
     </>
   ),
+  // 奇襲：暗殺者（月夜の屋根の上の刺客）
+  assassin: (
+    <>
+      <rect width="120" height="80" fill="#0e1018" />
+      <circle cx="88" cy="18" r="10" fill="#e8e4d0" opacity="0.85" />
+      <path d="M0 62 L30 48 L60 62 L90 46 L120 60 V80 H0Z" fill="#05060a" />
+      <g transform="translate(52 34)">
+        <path d="M0 0 Q6 -8 12 0 L14 20 H-2Z" fill="#141018" />
+        <circle cx="6" cy="-4" r="4" fill="#141018" />
+        <rect x="3" y="-5" width="6" height="1.4" fill="#c83a2a" />
+        <path d="M13 6 L28 -6" stroke="url(#dt-steel)" strokeWidth="1.6" />
+      </g>
+      <Vig />
+    </>
+  ),
+  // 奇襲：火矢の斉射（夜空に弧を描く火の矢）
+  fire_arrows: (
+    <>
+      <rect width="120" height="80" fill="#140c10" />
+      <Glow x={96} y={58} r={30} c="fire" />
+      <path d="M70 70 H120 V80 H70Z M78 56 H112 V70 H78Z" fill="#2a1a16" />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <g key={i}>
+          <path d={`M${10 + i * 6} ${66 - i * 2} Q${50 + i * 4} ${4 + i * 3} ${92 + i * 3} ${52 + i}`} stroke="#ffb060" strokeWidth="0.8" fill="none" opacity="0.6" strokeDasharray="2 2" />
+          <Flame x={92 + i * 3} y={52 + i} s={0.35} />
+        </g>
+      ))}
+      <Vig />
+    </>
+  ),
+  // 奇襲：夜襲隊（松明を掲げて忍び寄る一団）
+  night_raid: (
+    <>
+      <rect width="120" height="80" fill="#0c0e16" />
+      <path d="M70 60 V30 H76 V24 H84 V30 H96 V24 H104 V30 H120 V60Z" fill="#1a1c26" />
+      <path d="M0 62 Q60 56 120 62 V80 H0Z" fill="#05060a" />
+      {[12, 26, 40, 54].map((x, i) => (
+        <g key={x} transform={`translate(${x} ${50 - (i % 2) * 2})`}>
+          <path d="M0 0 Q4 -6 8 0 V14 H0Z" fill="#0a0a10" />
+          <circle cx="4" cy="-3" r="3" fill="#0a0a10" />
+        </g>
+      ))}
+      <Torch x={24} y={40} />
+      <Torch x={52} y={40} />
+      <Vig />
+    </>
+  ),
   // 奇襲：火薬樽（導火線に火のついた樽）
   powder_keg: (
     <>
