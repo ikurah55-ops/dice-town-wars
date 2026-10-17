@@ -34,7 +34,7 @@ function give(s: BattleState, side: Side, ...ids: string[]) {
 
 describe('データ', () => {
   it('全データが読み込める', () => {
-    expect(Object.keys(defaultData.cards)).toHaveLength(34);
+    expect(Object.keys(defaultData.cards)).toHaveLength(35);
     expect(defaultData.config.playerMaxHp).toBe(180);
     expect(defaultData.bosses.length).toBeGreaterThan(0);
   });

@@ -496,6 +496,28 @@ const ART: Record<string, ReactNode> = {
     </>
   ),
 
+  // 弩兵隊（城壁の上でクロスボウを構える兵）
+  crossbows: (
+    <>
+      <Bg fill="dt-sky-war" />
+      <path d="M0 52 H120 V80 H0Z" fill="#2a1a16" />
+      {[0, 20, 40, 60, 80, 100].map((x) => (
+        <rect key={x} x={x + 4} y={44} width={12} height={8} fill="#2a1a16" />
+      ))}
+      {[18, 52, 86].map((x) => (
+        <g key={x} transform={`translate(${x} 30)`}>
+          <circle cx="6" cy="2" r="3.4" fill="url(#dt-iron)" />
+          <path d="M2 6 Q6 3 10 6 V18 H2Z" fill="#141010" />
+          <rect x="6" y="9" width="16" height="2.2" fill="url(#dt-wood)" />
+          <path d="M20 4 Q24 10 20 16" stroke="#3a2a22" strokeWidth="1.6" fill="none" />
+          <line x1="20" y1="4" x2="20" y2="16" stroke="#c8b090" strokeWidth="0.6" />
+          <path d="M22 10 L34 6" stroke="#e8d8b8" strokeWidth="0.9" />
+        </g>
+      ))}
+      <Particles seed={53} n={14} box={[60, 2, 118, 28]} r={[0.3, 0.8]} fill="#ffb060" />
+      <Vig />
+    </>
+  ),
   // 奇襲：火薬樽（導火線に火のついた樽）
   powder_keg: (
     <>
