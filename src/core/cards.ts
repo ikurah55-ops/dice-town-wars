@@ -81,7 +81,7 @@ export function describeEffect(e: Effect, data: GameData, level = 1): string {
     case 'halve_attack_damage':
       return '受ける攻撃カードのダメージが半分';
     case 'keep_raids':
-      return `奇襲カードが発動しても壊れず、ダメージが${a}倍`;
+      return `奇襲カードが発動しても壊れず、ダメージが${e.amount}倍`; // 倍率は小数のまま（1.3 を四捨五入しない）
     case 'reroll':
       return `1ターンに${a}回、振り直せる`;
   }

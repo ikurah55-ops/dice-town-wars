@@ -3,6 +3,7 @@ import { DEFAULT_AI } from '../src/core/ai';
 import { runAutoBattle } from '../src/core/auto';
 import { buildGameData, defaultData, validateLoadout } from '../src/core/data';
 import { createRng } from '../src/core/rng';
+import { describeCard } from '../src/core/cards';
 import { applyAction, buyError, createBattle } from '../src/core/rules';
 import type { BattleState, Combatant, DiceDef, GameData, Side } from '../src/core/types';
 
@@ -131,6 +132,9 @@ describe('奇襲', () => {
     applyAction(s, data, { type: 'end_turn' });
     applyAction(s, data, { type: 'roll' }); // 効果切れ：今度は壊れる
     expect(kegs()).toBe(0);
+  });
+  it('不壊の加護の説明文は倍率を小数のまま表示する', () => {
+    expect(describeCard(data.cards.unbreakable, data)).toBe('自分の手番3回のあいだ、奇襲カードが発動しても壊れず、ダメージが1.3倍');
   });
   it('見張り塔で軽減される', () => {
     const towerDmg = (data.cards.siege_tower.effects[0] as { amount: number }).amount;
