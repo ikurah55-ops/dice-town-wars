@@ -2652,6 +2652,20 @@ button {
 .battle.has-env .board {
   background: rgba(0, 0, 0, 0.3);
 }
+/* 環境効果のイラストを背景に：暗い幕を重ねて、UIの文字も絵も両方見えるように */
+.battle.has-env-img {
+  background:
+    linear-gradient(180deg, rgba(16, 10, 6, 0.66), rgba(16, 10, 6, 0.55) 45%, rgba(16, 10, 6, 0.72)),
+    var(--env-img) center / cover no-repeat,
+    #1a120c;
+}
+.battle.has-env-img .board {
+  background: rgba(0, 0, 0, 0.2);
+}
+/* 明るい絵でもログが読めるように、ログの下だけ少し暗く */
+.battle.has-env-img .side-log {
+  background: rgba(10, 6, 4, 0.55);
+}
 
 /* 練習モードの環境効果選択 */
 .env-select {

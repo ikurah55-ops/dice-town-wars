@@ -270,11 +270,17 @@ export function Battle({
     void perform({ type: 'buy', cardId: id });
   };
 
+  // 環境効果があるときは、その環境効果のイラストを戦闘画面の背景にする（濃さは CSS で調整）
+  const envBgImg = state.environment ? envImage(state.environment.id) : undefined;
+  const battleStyle: Record<string, string> = {};
+  if (state.environment?.color) battleStyle['--env-bg'] = state.environment.color;
+  if (envBgImg) battleStyle['--env-img'] = `url("${envBgImg}")`;
+
   return (
     <div
-      className={`screen battle ${state.environment ? 'has-env' : ''}`}
+      className={`screen battle ${state.environment ? 'has-env' : ''} ${envBgImg ? 'has-env-img' : ''}`}
       ref={stageRef}
-      style={state.environment?.color ? { ['--env-bg' as string]: state.environment.color } : undefined}
+      style={battleStyle}
     >
       {/* 上：CPU */}
       <div className={`bar bar-enemy ${state.active === 1 && state.phase !== 'over' ? 'is-active' : ''}`}>
